@@ -707,13 +707,14 @@ function resultHtml(it,a){
  else if(r.m==='empty')st='<div class="rm mu">Bạn chưa nhập câu trả lời.</div>';
  else st='<div class="rm mu">Chưa khớp chính xác với đáp án nào trong dữ liệu. Điều này không có nghĩa là sai: tiếng Trung có thể diễn đạt bằng nhiều cách. Hãy so với đáp án bên dưới.</div>';
  const n=hn(a.a);
+ const alt=(it.alt||[]).filter(x=>x&&String(x.zh||'').trim()),avoid=(it.avoid||[]).filter(x=>x&&String(x.zh||'').trim()),voc=(it.vocab||[]).filter(x=>x&&String(x.w||'').trim()),gr=(it.grammar||[]).filter(x=>x&&String(x.name||'').trim());
  let h='<div class="rs" role="status">'+st+'<div class="ref zh">'+esc(it.zh)+'</div><div class="rp">'+esc(it.py)+'</div><div class="c" style="text-align:left">Dịch ngược: '+esc(it.back_vi)+'</div>';
  if(it.note)h+='<p style="margin:8px 0 0"><b>Giải thích:</b> '+esc(it.note)+'</p>';
  if((it.key_points||[]).length&&n){h+='<details class="kp" open><summary>Gợi ý tự động theo cụm từ (không phải chấm điểm)</summary><ul>'+it.key_points.map(k=>{const y=k.zh_ok.some(z=>n.includes(hn(z)));return '<li><b class="'+(y?'y':'n')+'">'+(y?'✓':'–')+'</b> '+esc(k.vi)+' <span class="zh">('+k.zh_ok.map(esc).join(' / ')+')</span></li>'}).join('')+'</ul></details>'}
- if((it.alt||[]).length)h+='<details><summary>Đáp án phụ được chấp nhận ('+it.alt.length+')</summary><ul>'+it.alt.map(x=>'<li><span class="zh">'+esc(x.zh)+'</span> · '+esc(x.py)+'<br><small>'+esc(x.note)+'</small></li>').join('')+'</ul></details>';
- if((it.avoid||[]).length)h+='<details><summary>Lỗi thường gặp cần tránh ('+it.avoid.length+')</summary><ul>'+it.avoid.map(x=>'<li><span class="zh">'+esc(x.zh)+'</span><br><small>'+esc(x.why)+'</small></li>').join('')+'</ul></details>';
- if((it.vocab||[]).length)h+='<details><summary>Từ vựng quan trọng ('+it.vocab.length+')</summary><ul>'+it.vocab.map(x=>'<li><span class="zh">'+esc(x.w)+'</span> · '+esc(x.py)+' · '+esc(x.vi)+'</li>').join('')+'</ul></details>';
- if((it.grammar||[]).length)h+='<details><summary>Điểm ngữ pháp ('+it.grammar.length+')</summary><ul>'+it.grammar.map(x=>'<li>'+esc(x.name)+' <span class="un">('+(x.gs==='existing'?'có trong mục Ngữ pháp':'đề xuất, chưa có trong mục Ngữ pháp')+')</span></li>').join('')+'</ul></details>';
+ if(alt.length)h+='<details open><summary>Đáp án phụ được chấp nhận ('+alt.length+')</summary><ul>'+alt.map(x=>'<li><span class="zh">'+esc(x.zh)+'</span>'+(x.py?' · '+esc(x.py):'')+(x.note?'<br><small>'+esc(x.note)+'</small>':'')+'</li>').join('')+'</ul></details>';
+ if(avoid.length)h+='<details open><summary>Lỗi thường gặp cần tránh ('+avoid.length+')</summary><ul>'+avoid.map(x=>'<li><span class="zh">'+esc(x.zh)+'</span>'+(x.why?'<br><small>'+esc(x.why)+'</small>':'')+'</li>').join('')+'</ul></details>';
+ if(voc.length)h+='<details open><summary>Từ vựng quan trọng ('+voc.length+')</summary><ul>'+voc.map(x=>'<li><span class="zh">'+esc(x.w)+'</span>'+[x.py,x.vi].filter(Boolean).map(t=>' · '+esc(t)).join('')+'</li>').join('')+'</ul></details>';
+ if(gr.length)h+='<details open><summary>Điểm ngữ pháp ('+gr.length+')</summary><ul>'+gr.map(x=>'<li>'+esc(x.name)+' <span class="un">('+(x.gs==='existing'?'có trong mục Ngữ pháp':'đề xuất, chưa có trong mục Ngữ pháp')+')</span></li>').join('')+'</ul></details>';
  if((it.over||[]).length)h+='<div class="un" style="margin-top:6px">Từ ngoài HSK 1: '+it.over.map(o=>'<span class="zh">'+esc(o.w)+'</span> ('+esc(o.why)+')').join('; ')+'</div>';
  if((it.needs_check||[]).length)h+='<div class="un" style="margin-top:6px">⚠ Điểm cần người bản ngữ/giáo viên kiểm tra: '+it.needs_check.map(esc).join('; ')+'</div>';
  return h+'</div>'}
