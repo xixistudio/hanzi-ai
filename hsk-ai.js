@@ -6,7 +6,7 @@
    - Dùng chung cho index.html (tab Luyện dịch) và ai-test.html (bộ kiểm thử). */
 (function(){
 'use strict';
-const DEF={on:false,url:'http://localhost:11434',model:'qwen2.5:3b',timeout:120,fmt:'schema',think:'auto',predict:500};
+const DEF={on:false,url:'http://localhost:11434',model:'qwen3:4b',timeout:120,fmt:'schema',think:'off',predict:500}; // cấu hình đã chốt: qwen3:4b, think:false, num_predict 500, JSON Schema (num_ctx 3072 và temperature 0 nằm trong chatOnce)
 const THINK_MODES=['auto','on','off'];
 const RV=4; // phiên bản cấu trúc kết quả lưu trong trình duyệt
 const TYPES=['meaning','vocabulary','grammar','word_order','name','extra_content'];
@@ -160,10 +160,13 @@ function rules(it,answer){
 const sameChars=(a,b)=>a.length===b.length&&[...a].sort().join('')===[...b].sort().join('');
 /* Hai trường `de_noi`, `bai_lam_noi` là cụm tiếng Việt ngắn. Trả về chuỗi sạch hoặc null nếu thiếu, cụt, vô nghĩa, có chữ Hán hoặc lẫn tiếng Anh. */
 const FIELD_JUNK=/^(\.{2,}|…|không có|không rõ|n\/a|null|none|undefined|x|y|-+)$/i;
-const FIELD_TAIL=/(^|\s)(và|của|là|thành|với|cho|nhưng|mà|thì|để|bởi|vì|như|hoặc|hay|một|các|những|này|đó|ở|trong)$/i;
+const FIELD_TAIL=/(^|\s)(và|của|là|thành|với|cho|nhưng|mà|thì|để|bởi|vì|như|hoặc|hay|một|các|những|ở|trong)$/i;
 function cleanField(v,min){
- let t=clip(v,120).replace(/^["“'\s]+|["”'\s]+$/g,'').trim();
+ let t=clip(v,120).trim();
+ /* chỉ bỏ dấu nháy khi bao trọn cả cụm theo cặp; không cắt lẻ một đầu (tránh "không nói 'xin" mất dấu đóng) */
+ t=t.replace(/^"([^"]*)"$/,'$1').replace(/^“([^”]*)”$/,'$1').replace(/^'([^']*)'$/,'$1').trim();
  if(/^«[^«»]*»$/.test(t))t=t.slice(1,-1).trim();
+ if((t.match(/["“”]/g)||[]).length%2===1||(t.match(/'/g)||[]).length%2===1)return null;
  if(t.length<(min||2))return null;
  if(/\p{Script=Han}/u.test(t))return null;
  if(FIELD_JUNK.test(t)||FIELD_TAIL.test(t)||/[,;:\-–]$/.test(t))return null;
@@ -175,6 +178,18 @@ const STOP=new Set('là của và có không một những các này đó kia �
 const toks=s=>(String(s||'').toLowerCase().normalize('NFC').match(/\p{L}+/gu)||[]).filter(w=>w.length>=2&&!STOP.has(w));
 function srcTokens(it){const set=new Set();[it.vi,it.back_vi].concat((it.key_points||[]).map(k=>k&&k.vi)).forEach(x=>toks(x).forEach(w=>set.add(w)));return set}
 const norm=s=>String(s||'').toLowerCase().normalize('NFC').replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+/* Hai trường chứa nhau: chỉ bỏ khi phần chênh lệch toàn là từ có trong đề tiếng Việt và không phải từ chỉ số lượng/phủ định/người (các, những, không, số...). */
+const DIFF_MARK=new Set('các những mọi nhiều ít vài một hai ba bốn năm sáu bảy tám chín mười trăm nghìn không chưa chẳng đừng chớ cả tất hết chỉ đều mỗi từng cũng còn vẫn đã sẽ đang'.split(' '));
+function contain(it,X,Y){
+ const a=norm(X).split(' '),b=norm(Y).split(' ');
+ const sub=(s,l)=>{for(let i=0;i+s.length<=l.length;i++)if(s.every((w,j)=>l[i+j]===w))return i;return -1};
+ let sm,lg;if(a.length<=b.length){sm=a;lg=b}else{sm=b;lg=a}
+ const i=sub(sm,lg);if(i<0)return null;
+ const diff=lg.slice(0,i).concat(lg.slice(i+sm.length));if(!diff.length)return null;
+ const all=new Set();[it.vi,it.back_vi].concat((it.key_points||[]).map(k=>k&&k.vi)).forEach(x=>norm(x).split(' ').forEach(w=>w&&all.add(w)));
+ if(diff.every(w=>all.has(w)&&!DIFF_MARK.has(w)&&!/\d/.test(w)))return 'de_noi và bai_lam_noi chỉ khác nhau ở từ vốn có trong đề, chưa đủ căn cứ nói là lỗi';
+ return null;
+}
 /* Ghép lời giải thích bằng mã theo loại lỗi. Trả về {text} hoặc {why} khi không đủ căn cứ. */
 function explain(it,x,type){
  const Y=cleanField(x.bai_lam_noi),X=cleanField(x.de_noi);
@@ -184,6 +199,7 @@ function explain(it,x,type){
  }
  if(!Y||!X)return {why:'thiếu, cụt hoặc vô nghĩa ở de_noi/bai_lam_noi'};
  if(norm(X)===norm(Y))return {why:'de_noi và bai_lam_noi giống nhau'};
+ const c=contain(it,X,Y);if(c)return {why:c};
  if(type==='meaning'||type==='vocabulary'||type==='name'){
   const src=srcTokens(it);if(!toks(X).some(w=>src.has(w)))return {why:'de_noi không khớp nội dung đề tiếng Việt'};
   return {text:'Đề nói «'+X+'», nhưng bài làm nói «'+Y+'».'};
@@ -234,7 +250,8 @@ function assess(it,answer,p,meta,opts){
   else if(hints.length){status='unsure';reasons.push('AI không thấy lỗi, nhưng quy tắc kiểm tra bằng mã có gợi ý bên dưới.')}
   else status='fit';
  }else if(p.verdict==='has_error'){
-  if(valid.length){
+  if(summaryHidden&&!hints.length){status='unsure';reasons.push('AI tự mâu thuẫn: phần tóm tắt nói bạn dịch đúng nhưng kết luận lại báo lỗi, và không có quy tắc nào xác nhận lỗi.')}
+  else if(valid.length){
    if(perm&&!hard){status='unsure';reasons.push('Bài làm chỉ khác bản tham khảo ở trật tự từ, mà nhiều trật tự đều đúng; chưa có quy tắc nào xác nhận là lỗi.')}
    else status='review';
   }else if(hard&&hardPat){status='review';reasons.push('AI báo có lỗi và quy tắc kiểm tra bằng mã cũng có gợi ý tương ứng.')}
@@ -268,6 +285,7 @@ function mapNetwork(e,state){
  return fail('network','Không kết nối được tới Ollama. Hãy kiểm tra Ollama đang chạy, địa chỉ trong Cài đặt AI, và biến OLLAMA_ORIGINS có chứa nguồn của trang này.');
 }
 /* Tham số `think` của Ollama: 'on' => true, 'off' => false, 'auto' => tắt suy nghĩ với mô hình qwen3 (mô hình suy nghĩ dễ dùng hết token), các mô hình khác không gửi tham số. */
+const THINKERS=/^(qwen3|deepseek-r1|gpt-oss|qwq|magistral)/i; // họ mô hình có chế độ suy nghĩ
 function thinkParam(cfg){
  if(cfg.think==='on')return true;if(cfg.think==='off')return false;
  return /^qwen3/i.test(String(cfg.model||''))?false:undefined;
@@ -280,7 +298,7 @@ async function chatOnce(cfg,messages,signal,fmt,think){
   let body='';try{body=await res.text()}catch(e){}
   if(res.status===403)return fail('origin','Ollama từ chối nguồn của trang này (HTTP 403). Cần đặt OLLAMA_ORIGINS để cho phép trang web, rồi khởi động lại Ollama.');
   if(res.status===404||/not found/i.test(body))return fail('model','Ollama không tìm thấy model "'+(cfg.model||DEF.model)+'". Cài bằng lệnh: ollama pull '+(cfg.model||DEF.model));
-  return Object.assign(fail('http','Ollama trả về lỗi HTTP '+res.status+'.'),{status:res.status});
+  return Object.assign(fail('http','Ollama trả về lỗi HTTP '+res.status+'.'),{status:res.status,body:String(body||'').slice(0,300)});
  }
  let j;try{j=await res.json()}catch(e){return fail('format','Ollama trả về dữ liệu không đọc được.')}
  const text=j&&j.message&&j.message.content,th=j&&j.message&&j.message.thinking,ns=v=>typeof v==='number'?v:0;
@@ -296,15 +314,18 @@ async function review(it,answer,cfg,opts){
  const ctl=new AbortController(),state={timedOut:false,sec:cfg.timeout};
  const onAbort=()=>ctl.abort();if(opts.signal){if(opts.signal.aborted)return fail('cancel','Đã dừng yêu cầu AI.');opts.signal.addEventListener('abort',onAbort)}
  const timer=setTimeout(()=>{state.timedOut=true;ctl.abort()},Math.max(5,+cfg.timeout||DEF.timeout)*1000);
- const t0=Date.now();let messages=buildMessages(it,answer),raw='',fmt=cfg.fmt==='json'?'json':SCHEMA,mode=cfg.fmt==='json'?'json':'schema',attempt=0,think=thinkParam(cfg),thinkBackup;
+ const t0=Date.now();let messages=buildMessages(it,answer),raw='',fmt=cfg.fmt==='json'?'json':SCHEMA,mode=cfg.fmt==='json'?'json':'schema',attempt=0,think=thinkParam(cfg);
  const M={think:think===undefined?'không gửi':String(think),thinkDropped:false,predict:predictOf(cfg),doneReason:'',promptTokens:0,evalTokens:0,thinkChars:0,contentChars:0,thinkSample:'',totalMs:0,loadMs:0,calls:0};
  const fin=()=>Object.assign({},M,{thinkTokensEst:M.thinkChars+M.contentChars?Math.round(M.evalTokens*M.thinkChars/(M.thinkChars+M.contentChars)):0});
  try{
   while(attempt<2){
    let r;try{r=await chatOnce(cfg,messages,ctl.signal,fmt,think)}catch(e){return mapNetwork(e,state)}
    if(!r.ok&&r.error.code==='http'&&r.status===400){
-    if(think!==undefined){thinkBackup=think;think=undefined;M.thinkDropped=true;continue}
-    if(mode==='schema'){fmt='json';mode='json';if(thinkBackup!==undefined){think=thinkBackup;M.thinkDropped=false}continue} // 400 không do `think`: khôi phục tham số này
+    /* 400 do tham số `think` (thường là mô hình không hỗ trợ suy nghĩ): chỉ bỏ tham số này với mô hình KHÔNG thuộc họ suy nghĩ, vì bỏ đi sẽ làm họ suy nghĩ BẬT lại. */
+    if(think!==undefined&&/think/i.test(r.body||'')){
+     if(THINKERS.test(String(cfg.model||'')))return Object.assign(fail('think_unsupported','Ollama không nhận tham số tắt suy nghĩ (think:false) cho model "'+(cfg.model||DEF.model)+'". Hãy cập nhật Ollama lên bản mới hơn. Ứng dụng không tự bật suy nghĩ vì mô hình sẽ hết token mà chưa trả lời.'),{meta:fin()});
+     think=undefined;M.thinkDropped=true;continue}
+    if(mode==='schema'){fmt='json';mode='json';continue} // 400 không do `think`: lùi về JSON thường, GIỮ NGUYÊN think
    }
    if(!r.ok)return r;
    const x=r.meta;M.calls++;M.doneReason=x.doneReason;M.promptTokens=Math.max(M.promptTokens,x.promptTokens);M.evalTokens+=x.evalTokens;M.thinkChars+=x.thinking.length;M.contentChars+=r.text.length;M.totalMs+=x.totalMs;M.loadMs=Math.max(M.loadMs,x.loadMs);if(x.thinking&&!M.thinkSample)M.thinkSample=clip(x.thinking,600);
@@ -336,8 +357,8 @@ async function ping(cfg){
  }catch(e){return mapNetwork(e,state)}finally{clearTimeout(timer)}
 }
 
-function load(){try{const o=JSON.parse(localStorage.getItem('hanziai.ai.v1')||'null');return Object.assign({},DEF,o&&typeof o==='object'?o:{})}catch(e){return Object.assign({},DEF)}}
-function save(c){try{localStorage.setItem('hanziai.ai.v1',JSON.stringify({on:!!c.on,url:c.url,model:c.model,timeout:c.timeout,fmt:c.fmt==='json'?'json':'schema',think:THINK_MODES.includes(c.think)?c.think:'auto',predict:predictOf(c)}))}catch(e){}}
+function load(){try{const o=JSON.parse(localStorage.getItem('hanziai.ai.v1')||'null'),c=Object.assign({},DEF,o&&typeof o==='object'?o:{});if(!THINK_MODES.includes(c.think)||c.think==='on')c.think=DEF.think; /* ứng dụng không bao giờ bật suy nghĩ từ cài đặt đã lưu; chế độ 'on' chỉ dùng trong trang thử nghiệm */c.predict=predictOf(c);return c}catch(e){return Object.assign({},DEF)}}
+function save(c){try{localStorage.setItem('hanziai.ai.v1',JSON.stringify({on:!!c.on,url:c.url,model:c.model,timeout:c.timeout,fmt:c.fmt==='json'?'json':'schema',think:c.think==='auto'||c.think==='off'?c.think:(c.think===undefined?load().think:DEF.think),predict:predictOf(c)}))}catch(e){}}
 
 window.HSK_AI={DEF,RV,thinkParam,predictOf,TYPES,TYPE_VI,STATUS_VI,SYSTEM,SCHEMA,FEWSHOT,hn,buildMessages,parseResult,assess,normalize,cleanField,explain,rules,patternHints,keyHints,localChecks,langBad,review,ping,load,save,validUrl};
 })();
