@@ -724,7 +724,7 @@ function aiStore(){try{const o=JSON.parse(localStorage.getItem(AK)||'null');if(o
 function aiPut(id,rec){const o=aiStore();o.r[id]=rec;try{localStorage.setItem(AK,JSON.stringify(o))}catch(e){}}
 let aiRun=null;
 function aiStop(){if(aiRun){const r=aiRun;aiRun=null;clearInterval(r.tm);try{r.ctl.abort()}catch(e){}}}
-const AIST={fit:'Phù hợp (AI không thấy vấn đề)',review:'Cần xem lại',unsure:'Chưa chắc'},AICF={high:'cao',medium:'trung bình',low:'thấp'};
+const AIST={fit:'Phù hợp (AI không thấy vấn đề)',review:'Cần xem lại',unsure:'Chưa chắc'};
 function aiSettings(){
  const A=window.HSK_AI;if(!A)return '';const c=A.load();
  return '<div class="card" id="aiset"><h2>Cài đặt nhận xét bằng AI (tuỳ chọn)</h2><p class="c" style="text-align:left">Dùng Ollama chạy ngay trên máy bạn để nhận xét bài <b>Dịch câu</b>. Câu trả lời chỉ được gửi tới địa chỉ bên dưới. Chỉ mang tính tham khảo: không chấm điểm và không đổi tiến độ học.</p>'+
@@ -740,10 +740,10 @@ function aiBind(){
 function aiHintsHtml(h){return h.length?'<div class="aiW">Kiểm tra tự động bằng quy tắc (không phải AI, chỉ là gợi ý):<ul>'+h.map(x=>'<li>'+esc(x.detail)+'</li>').join('')+'</ul></div>':''}
 function aiResultHtml(rec){
  const r=rec.res,A=window.HSK_AI;
- let h='<div class="aiR"><div><b class="aiS '+r.status+'">'+AIST[r.status]+'</b> <span class="tag">AI tự đánh giá độ chắc: '+AICF[r.confidence]+'</span></div>';
+ let h='<div class="aiR"><div><b class="aiS '+r.status+'">'+AIST[r.status]+'</b></div>';
  (r.reasons||[]).forEach(x=>{h+='<p class="aiW">⚠ '+esc(x)+'</p>'});
  if(r.summary)h+='<p>'+esc(r.summary)+'</p>';
- if(r.issues.length)h+='<p class="un" style="margin-bottom:0">'+(r.status==='review'?'AI nêu:':'AI còn băn khoăn (chưa chắc đây là lỗi):')+'</p><ul>'+r.issues.map(x=>'<li><b>'+esc(A.TYPE_VI[x.type]||x.type)+':</b> '+esc(x.detail)+(x.suggestion?'<br><small>Gợi ý: '+esc(x.suggestion)+'</small>':'')+'</li>').join('')+'</ul>';
+ if(r.issues.length)h+='<p class="un" style="margin-bottom:0">'+(r.status==='review'?'AI nêu:':'AI còn băn khoăn (chưa chắc đây là lỗi):')+'</p><ul>'+r.issues.map(x=>'<li><b>'+esc(A.TYPE_VI[x.type]||x.type)+':</b>'+(x.quote?' <span class="zh">「'+esc(x.quote)+'」</span>':'')+' '+esc(x.detail)+(x.suggestion?'<br><small>Gợi ý: '+esc(x.suggestion)+'</small>':'')+'</li>').join('')+'</ul>';
  else if(r.status==='fit')h+='<p class="un">AI không nêu lỗi nào.</p>';
  h+=aiHintsHtml(r.hints||[]);
  if(r.notes)h+='<p class="un"><b>Điều AI chưa chắc / lưu ý:</b> '+esc(r.notes)+'</p>';
@@ -757,7 +757,7 @@ function aiMount(it,a){
  const m=match(it,a.a).m;
  if(m==='empty'){box.remove();return}
  if(m==='exact'||m==='alt'){box.innerHTML='<div class="un">Khớp đáp án trong dữ liệu nên không cần hỏi AI.</div>';return}
- const rec=aiStore().r[it.id],fresh=rec&&rec.ans===hn(a.a)&&rec.model===cfg.model&&rec.res&&rec.res.status;
+ const rec=aiStore().r[it.id],fresh=rec&&rec.ans===hn(a.a)&&rec.model===cfg.model&&rec.res&&rec.res.rv===A.RV;
  let h='<div class="aiB"><div class="aiT"><b>Nhận xét bằng AI</b> <span class="tag">chỉ để tham khảo</span></div>';
  if(fresh)h+=aiResultHtml(rec);else h+=aiHintsHtml(A.rules(it,a.a));
  h+='<div class="bar"><button class="btn soft" id="aigo">'+(fresh?'Hỏi lại AI':'Nhận xét bằng AI')+'</button></div><div id="aistat" class="un" role="status"></div>'+

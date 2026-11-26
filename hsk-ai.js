@@ -1,14 +1,15 @@
 /* Hanzi AI – nhận xét bản dịch bằng Ollama chạy trên máy người học (giai đoạn 1: dịch câu), phiên bản 2.
    - Không chấm điểm, không tự đánh dấu đúng/sai vào tiến độ.
    - Chỉ gửi câu trả lời tới địa chỉ Ollama do người dùng cấu hình (mặc định http://localhost:11434).
-   - Một lượt gọi AI, kết quả theo JSON Schema: verdict = correct | has_error | unsure.
+   - Một lượt gọi AI, kết quả theo JSON Schema: verdict = correct | has_error | unsure. Mỗi lỗi có `quote` (chữ Hán chép nguyên văn từ bài làm) để mã kiểm chứng.
    - Các quy tắc bằng mã (R1–R9) chỉ tạo GỢI Ý, không bao giờ tự kết luận câu sai.
    - Dùng chung cho index.html (tab Luyện dịch) và ai-test.html (bộ kiểm thử). */
 (function(){
 'use strict';
-const DEF={on:false,url:'http://localhost:11434',model:'qwen2.5:3b',timeout:120};
+const DEF={on:false,url:'http://localhost:11434',model:'qwen2.5:3b',timeout:120,fmt:'schema'};
+const RV=3; // phiên bản cấu trúc kết quả lưu trong trình duyệt
 const TYPES=['meaning','vocabulary','grammar','word_order','name','extra_content'];
-const TYPE_VI={meaning:'Sai nghĩa / lệch ý (thời gian, địa điểm, người…)',vocabulary:'Từ vựng',grammar:'Ngữ pháp',word_order:'Trật tự từ',name:'Tên riêng / tên người / số',extra_content:'Thêm nội dung không có trong đề'};
+const TYPE_VI={unknown:'Chưa rõ loại lỗi',meaning:'Sai nghĩa / lệch ý (thời gian, địa điểm, người…)',vocabulary:'Từ vựng',grammar:'Ngữ pháp',word_order:'Trật tự từ',name:'Tên riêng / tên người / số',extra_content:'Thêm nội dung không có trong đề'};
 const STATUS_VI={fit:'Phù hợp',review:'Cần xem lại',unsure:'Chưa chắc'};
 const VERDICTS=['correct','has_error','unsure'],CONF=['high','medium','low'];
 const hn=s=>(String(s==null?'':s).match(/\p{Script=Han}/gu)||[]).join('');
@@ -17,7 +18,7 @@ const clip=(s,n)=>String(s==null?'':s).replace(/\s+/g,' ').trim().slice(0,n);
 /* ---------- Schema gửi cho Ollama (thứ tự trường = thứ tự model viết ra) ---------- */
 const SCHEMA={type:'object',properties:{
  summary:{type:'string'},
- issues:{type:'array',maxItems:3,items:{type:'object',properties:{type:{type:'string',enum:TYPES},detail:{type:'string'},suggestion:{type:'string'}},required:['type','detail','suggestion']}},
+ issues:{type:'array',maxItems:3,items:{type:'object',properties:{type:{type:'string',enum:TYPES},quote:{type:'string'},detail:{type:'string'},suggestion:{type:'string'}},required:['type','quote','detail','suggestion']}},
  verdict:{type:'string',enum:VERDICTS},
  confidence:{type:'string',enum:CONF},
  notes:{type:'string'}},
@@ -30,24 +31,24 @@ const SYSTEM=[
 '1. Một câu tiếng Việt có nhiều cách dịch đúng. Bản tham khảo và các bản đúng khác chỉ là ví dụ, KHÔNG phải đáp án duy nhất. Không coi là sai chỉ vì khác bản tham khảo, dùng từ đồng nghĩa, thêm hoặc bớt từ mà nghĩa không đổi, hay đổi trật tự mà vẫn đúng.',
 '2. Xét nghĩa trước, rồi từ vựng, ngữ pháp, trật tự từ.',
 '3. Không được đổi tên riêng, con số, thời gian, địa điểm hay người so với câu tiếng Việt (ví dụ: anh trai thành em trai, hôm qua thành hôm nay). Nếu người học đổi, đó là lỗi.',
-'4. Không bịa lỗi. Chỉ nêu lỗi khi chỉ ra được chữ cụ thể trong bài làm. Không đề nghị thêm từ không cần thiết. Từ ngoài trình độ HSK 1 không phải là lỗi.',
+'4. Không bịa lỗi. Mỗi lỗi phải có "quote": đoạn chữ Hán chép NGUYÊN VĂN từ CÂU TRẢ LỜI CỦA NGƯỜI HỌC (không thêm, không sửa chữ nào). Không chỉ ra được đoạn cụ thể thì không nêu lỗi. Không đề nghị thêm từ không cần thiết. Từ ngoài trình độ HSK 1 không phải là lỗi.',
 '5. Mỗi lỗi chỉ có một loại: "meaning" = nghĩa hoặc thông tin bị đổi (thời gian, địa điểm, người thân…); "vocabulary" = chọn sai từ; "grammar" = sai ngữ pháp, trợ từ, lượng từ, phủ định; "word_order" = sai trật tự từ; "name" = tên riêng, tên người hoặc con số bị đổi; "extra_content" = thêm thông tin không có trong câu tiếng Việt.',
 '6. verdict: "correct" = ý đúng và tiếng Trung chấp nhận được (issues để rỗng); "has_error" = có lỗi thật (phải có ít nhất một mục trong issues); "unsure" = không đủ căn cứ để kết luận. Không chắc thì chọn "unsure" hoặc confidence thấp và giải thích trong notes.',
-'7. Viết summary, detail, notes hoàn toàn bằng tiếng Việt, ngắn gọn, dễ hiểu cho người mới học. Chỉ dùng chữ Hán để trích câu tiếng Trung. Không dùng tiếng Anh.',
+'7. "detail" chỉ viết tiếng Việt, một hoặc hai câu trọn vẹn kết thúc bằng dấu chấm, TUYỆT ĐỐI không chèn chữ Hán (muốn nhắc tới từ nào thì dùng nghĩa tiếng Việt, ví dụ «hôm qua», «anh trai»). Chữ Hán chỉ nằm trong "quote" và "suggestion". summary và notes cũng viết tiếng Việt ngắn gọn, dễ hiểu cho người mới học, không dùng tiếng Anh.',
 'Chỉ trả lời bằng MỘT đối tượng JSON, không thêm chữ nào khác, đúng dạng:',
-'{"summary":"...","issues":[{"type":"meaning|vocabulary|grammar|word_order|name|extra_content","detail":"...","suggestion":"..."}],"verdict":"correct|has_error|unsure","confidence":"high|medium|low","notes":"..."}'
+'{"summary":"...","issues":[{"type":"meaning|vocabulary|grammar|word_order|name|extra_content","quote":"...","detail":"...","suggestion":"..."}],"verdict":"correct|has_error|unsure","confidence":"high|medium|low","notes":"..."}'
 ].join('\n');
 
 /* 4 ví dụ mẫu (few-shot): câu ngoài ngân hàng bài tập và ngoài bộ kiểm thử. */
 const FEWSHOT=[
  {vi:'Cái áo này rất đẹp.',zh:'这件衣服很漂亮。',ans:'这件衣服很好看。',
-  out:{summary:'Bạn dịch đúng ý: cái áo này rất đẹp.',issues:[],verdict:'correct',confidence:'high',notes:'«好看» và «漂亮» đều dùng được để khen đẹp, nên khác bản tham khảo vẫn đúng.'}},
+  out:{summary:'Bạn dịch đúng ý: cái áo này rất đẹp.',issues:[],verdict:'correct',confidence:'high',notes:'Hai cách nói đều dùng được để khen đẹp, nên khác bản tham khảo vẫn đúng.'}},
  {vi:'Tôi có ba quyển sách.',zh:'我有三本书。',ans:'我有三个书。',
-  out:{summary:'Ý đúng nhưng dùng sai lượng từ.',issues:[{type:'grammar',detail:'Danh từ 书 thường dùng lượng từ 本, không dùng 个 trong câu này.',suggestion:'我有三本书。'}],verdict:'has_error',confidence:'high',notes:''}},
+  out:{summary:'Ý đúng nhưng dùng sai lượng từ.',issues:[{type:'grammar',quote:'三个书',detail:'Danh từ chỉ sách thường dùng lượng từ «quyển», không dùng lượng từ chung «cái» trong câu này.',suggestion:'我有三本书。'}],verdict:'has_error',confidence:'high',notes:''}},
  {vi:'Hôm nay tôi rất mệt.',zh:'我今天很累。',ans:'今天我很累。',
-  out:{summary:'Bạn dịch đúng ý: hôm nay tôi rất mệt.',issues:[],verdict:'correct',confidence:'high',notes:'Đưa «今天» lên đầu câu vẫn đúng. Hai cách đặt từ chỉ thời gian đều tự nhiên.'}},
+  out:{summary:'Bạn dịch đúng ý: hôm nay tôi rất mệt.',issues:[],verdict:'correct',confidence:'high',notes:'Đưa từ chỉ thời gian lên đầu câu vẫn đúng. Hai cách đặt từ chỉ thời gian đều tự nhiên.'}},
  {vi:'Anh trai tôi là bác sĩ.',zh:'我哥哥是医生。',ans:'我弟弟是医生。',
-  out:{summary:'Câu đúng ngữ pháp nhưng người trong câu bị đổi.',issues:[{type:'meaning',detail:'Đề nói «anh trai» (哥哥), bài dịch viết «em trai» (弟弟).',suggestion:'我哥哥是医生。'}],verdict:'has_error',confidence:'high',notes:''}}
+  out:{summary:'Câu đúng ngữ pháp nhưng người trong câu bị đổi.',issues:[{type:'meaning',quote:'弟弟',detail:'Đề nói «anh trai» nhưng bài dịch viết «em trai», nên người trong câu bị đổi.',suggestion:'我哥哥是医生。'}],verdict:'has_error',confidence:'high',notes:''}}
 ];
 
 function userMsg(vi,zh,alts,ans){
@@ -68,8 +69,8 @@ function parseResult(text){
  const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<=a)return null;
  let o;try{o=JSON.parse(t.slice(a,b+1))}catch(e){return null}
  if(!o||typeof o!=='object'||!VERDICTS.includes(o.verdict))return null;
- const issues=(Array.isArray(o.issues)?o.issues:[]).filter(x=>x&&TYPES.includes(x.type)&&clip(x.detail,1).length).slice(0,5)
-  .map(x=>({type:x.type,detail:clip(x.detail,300),suggestion:clip(x.suggestion,300)}));
+ const issues=(Array.isArray(o.issues)?o.issues:[]).filter(x=>x&&TYPES.includes(x.type)&&String(x.detail==null?'':x.detail).trim().length).slice(0,5)
+  .map(x=>({type:x.type,quote:clip(x.quote,80),detail:clip(x.detail,300),suggestion:clip(x.suggestion,300)}));
  const res={verdict:o.verdict,confidence:CONF.includes(o.confidence)?o.confidence:'low',summary:clip(o.summary,400),issues,notes:clip(o.notes,300)};
  if(!res.summary&&!issues.length&&!res.notes&&res.verdict==='unsure')return null;
  return res;
@@ -87,6 +88,7 @@ function langBad(s){
 
 /* ---------- Quy tắc bằng mã (gợi ý, KHÔNG phải kết luận) ---------- */
 const COMPOUND='但可还就要若总硬倒凡于正只老净先越也都又才却不';
+const EMBED=/知道|问|告诉|不知|看看|猜|觉得|明白|记得|想知|说|听|关心/; // câu hỏi lồng trong câu khác thì 吗 ở cuối là đúng
 /* Mẫu ngữ pháp hẹp. skipPrev: nếu chữ đứng ngay trước chỗ khớp thuộc tập này thì bỏ qua (tránh 但是, 就是, 不是…). */
 const PAT=[
  {id:'R4',type:'grammar',re:/没(?:有)?(?!有)[一-鿿]了(?![解吗吧啊呢嘛哦])[一-鿿]/g,
@@ -98,7 +100,11 @@ const PAT=[
  {id:'R7',type:'word_order',re:/(?:学习|学|说|读|写|看|吃|喝)(?:汉语|中文|英语|书|电影|电视|饭|水|茶|咖啡|水果|东西)在(?:家|学校|医院|公司|商店|饭馆|教室|这儿|那儿|这里|那里)$/g,
   detail:'Có thể sai trật tự từ: cụm chỉ nơi chốn «在…» thường đứng trước động từ (ví dụ: 在家学汉语).'},
  {id:'R8',type:'word_order',re:/(?:睡觉|吃饭|起床|上班|下班)几点$/g,
-  detail:'Có thể sai trật tự từ: từ hỏi giờ «几点» thường đứng trước động từ (ví dụ: 几点睡觉).'}
+  detail:'Có thể sai trật tự từ: từ hỏi giờ «几点» thường đứng trước động từ (ví dụ: 几点睡觉).'},
+ {id:'R10',type:'grammar',re:/(?:([\u4e00-\u9fff])不\1|有没有)[\u4e00-\u9fff]{0,6}吗$/g,test:(m,c)=>!EMBED.test(c),
+  detail:'Có thể sai ngữ pháp: câu hỏi chính phản (như 会不会…, 是不是…, 有没有…) đã là câu hỏi, thường không thêm «吗» ở cuối.'},
+ {id:'R11',type:'grammar',re:/(?:多少钱|几岁|几点|多大)吗$/g,test:(m,c)=>!EMBED.test(c),
+  detail:'Có thể sai ngữ pháp: câu hỏi đã có từ để hỏi (như 多少钱, 几岁, 几点) thì thường không thêm «吗» ở cuối.'}
 ];
 function clauses(s){return String(s||'').split(/[，,。\.？\?！!；;、：:\s]+/).map(hn).filter(Boolean)}
 /* Chạy các mẫu ngữ pháp trên một chuỗi bất kỳ (dùng cho kiểm thử "câu đúng không bị bắt"). */
@@ -110,7 +116,7 @@ function patternHints(answer){
    if(m.index===p.re.lastIndex)p.re.lastIndex++;
    const prev=m.index>0?c[m.index-1]:'';
    if(p.skipPrev&&prev&&p.skipPrev.includes(prev))continue;
-   if(p.test&&!p.test(m))continue;
+   if(p.test&&!p.test(m,c))continue;
    if(!seen[p.id]){seen[p.id]=1;out.push({id:p.id,type:p.type,soft:false,detail:p.detail})}break}
  })});
  return out;
@@ -150,35 +156,56 @@ function rules(it,answer){
 }
 
 /* ---------- Kết hợp kết quả AI và gợi ý thành trạng thái cuối ---------- */
-function grounded(x,ansHan,refHan){
- if(clip(x.detail,300).length<6)return false;
- const runs=((x.detail||'')+' '+(x.suggestion||'')).match(/\p{Script=Han}+/gu)||[];
- return runs.some(r=>ansHan.includes(r)||refHan.some(z=>z.includes(r)));
-}
-function assess(it,answer,p,meta){
- const ansHan=hn(answer),refHan=[it.zh].concat((it.alt||[]).map(a=>a&&a.zh)).map(hn).filter(Boolean);
+const sameChars=(a,b)=>a.length===b.length&&[...a].sort().join('')===[...b].sort().join('');
+/* `detail` hợp lệ: câu trọn vẹn (có dấu kết thúc), không bị cụt giữa chừng. */
+function detailComplete(d){d=String(d||'').trim();return d.length>=12&&/[.!?。！？…»”"')\]]$/.test(d)}
+const SUMMARY_OK=/(dịch đúng|đúng ý|chính xác|không có lỗi|không sai|hoàn toàn đúng)/i;
+/* opts.requireQuote=false chỉ dùng khi phát lại kết quả cũ (không có quote) để ước lượng; ứng dụng luôn dùng mặc định true. */
+function assess(it,answer,p,meta,opts){
+ opts=opts||{};const requireQuote=opts.requireQuote!==false;
+ const ansHan=hn(answer),refs=[it.zh].concat((it.alt||[]).map(a=>a&&a.zh)).map(hn).filter(Boolean);
+ const hints=rules(it,answer),hard=hints.some(h=>!h.soft),hardPat=hints.find(h=>!h.soft&&(h.type==='grammar'||h.type==='word_order'));
+ const perm=refs.some(r=>r!==ansHan&&sameChars(r,ansHan));
+ const names=(it.names||[]).map(hn).filter(Boolean),nameMissing=names.some(nm=>!ansHan.includes(nm));
  const langWarn=[];
- let summary=p.summary,notes=p.notes;
+ let summary=p.summary,notes=p.notes,summaryHidden=false;
  if(langBad(summary)){langWarn.push('summary');summary=''}
  if(langBad(notes)){langWarn.push('notes');notes=''}
+ if(p.verdict==='has_error'&&summary&&SUMMARY_OK.test(summary)){summary='';summaryHidden=true}
  const good=[],dropped=[];
  p.issues.forEach(x=>{
-  if(langBad(x.detail)){dropped.push({type:x.type,detail:x.detail,why:'lẫn ngôn ngữ'});if(!langWarn.includes('detail'))langWarn.push('detail')}
-  else if(!grounded(x,ansHan,refHan))dropped.push({type:x.type,detail:x.detail,why:'không chỉ ra chữ cụ thể'});
-  else good.push(x)});
- const hints=rules(it,answer),hard=hints.some(h=>!h.soft),any=hints.length>0,reasons=[];
+  const drop=why=>dropped.push({type:x.type,quote:x.quote,detail:x.detail,why});
+  if(langBad(x.detail)){if(!langWarn.includes('detail'))langWarn.push('detail');return drop('lẫn ngôn ngữ')}
+  if(!detailComplete(x.detail))return drop('lời giải thích bị cụt hoặc quá ngắn');
+  const q=hn(x.quote);
+  if(requireQuote){if(!q)return drop('thiếu đoạn trích (quote)');if(!ansHan.includes(q))return drop('đoạn trích không có trong bài làm')}
+  if(x.type==='extra_content'&&q&&refs.some(r=>r.includes(q)))return drop('đoạn trích đã có trong bản tham khảo, không phải nội dung thêm');
+  let type=x.type,relabeled=null,unknown=false;
+  if(type==='name'){ // «name» chỉ dành cho tên riêng/tên người mà đề đã khai báo
+   const hit=names.some(nm=>q&&(q.includes(nm)||nm.includes(q)));
+   if(!(names.length&&(nameMissing||hit))){type='meaning';relabeled='name'}
+  }
+  if(type==='word_order'&&!perm){ // trật tự từ chỉ đúng nghĩa khi bài làm là hoán vị của một bản đúng
+   relabeled='word_order';
+   if(hardPat)type=hardPat.type;else unknown=true;
+  }
+  good.push({type:unknown?'unknown':type,quote:x.quote,detail:x.detail,suggestion:x.suggestion,relabeled,unknown});
+ });
+ const valid=good.filter(x=>!x.unknown),reasons=[];
  let status;
  if(p.verdict==='correct'){
   if(good.length){status='unsure';reasons.push('AI kết luận đúng nhưng vẫn nêu nghi ngờ có căn cứ, nên chưa thể coi là chắc chắn.')}
-  else if(any){status='unsure';reasons.push('AI không thấy lỗi, nhưng quy tắc kiểm tra bằng mã có gợi ý bên dưới.')}
+  else if(hints.length){status='unsure';reasons.push('AI không thấy lỗi, nhưng quy tắc kiểm tra bằng mã có gợi ý bên dưới.')}
   else status='fit';
  }else if(p.verdict==='has_error'){
-  if(!good.length){status='unsure';reasons.push('AI báo có lỗi nhưng không chỉ ra được chỗ cụ thể, nên không coi là lỗi.')}
-  else if(p.confidence==='high'||hard)status='review';
-  else{status='unsure';reasons.push('AI nghi có lỗi nhưng độ chắc chắn chưa cao và chưa có quy tắc nào xác nhận.')}
+  if(valid.length){
+   if(perm&&!hard){status='unsure';reasons.push('Bài làm chỉ khác bản tham khảo ở trật tự từ, mà nhiều trật tự đều đúng; chưa có quy tắc nào xác nhận là lỗi.')}
+   else status='review';
+  }else if(hard&&hardPat){status='review';reasons.push('AI báo có lỗi và quy tắc kiểm tra bằng mã cũng có gợi ý tương ứng.')}
+  else{status='unsure';reasons.push(good.length?'AI nêu nghi ngờ nhưng không xác định được loại lỗi, nên chưa coi là lỗi chắc chắn.':'AI báo có lỗi nhưng không chỉ ra được chỗ cụ thể có căn cứ, nên không coi là lỗi.')}
  }else{status='unsure';reasons.push('AI không đủ căn cứ để kết luận.')}
  if(langWarn.length)reasons.push('AI trả lời lẫn ngôn ngữ (không phải tiếng Việt) nên phần giải thích đó đã bị ẩn.');
- return {status,verdict:p.verdict,confidence:p.confidence,summary,notes,issues:good,hints,dropped,langWarn,reasons,schema:(meta&&meta.schema)||'schema'};
+ return {rv:RV,status,verdict:p.verdict,confidence:p.confidence,summary,summaryHidden,notes,issues:good,hints,dropped,langWarn,reasons,schema:(meta&&meta.schema)||'schema'};
 }
 
 /* ---------- Gọi Ollama ---------- */
@@ -211,7 +238,7 @@ async function review(it,answer,cfg,opts){
  const ctl=new AbortController(),state={timedOut:false,sec:cfg.timeout};
  const onAbort=()=>ctl.abort();if(opts.signal){if(opts.signal.aborted)return fail('cancel','Đã dừng yêu cầu AI.');opts.signal.addEventListener('abort',onAbort)}
  const timer=setTimeout(()=>{state.timedOut=true;ctl.abort()},Math.max(5,+cfg.timeout||DEF.timeout)*1000);
- const t0=Date.now();let messages=buildMessages(it,answer),raw='',fmt=SCHEMA,mode='schema',attempt=0;
+ const t0=Date.now();let messages=buildMessages(it,answer),raw='',fmt=cfg.fmt==='json'?'json':SCHEMA,mode=cfg.fmt==='json'?'json':'schema',attempt=0;
  try{
   while(attempt<2){
    let r;try{r=await chatOnce(cfg,messages,ctl.signal,fmt)}catch(e){return mapNetwork(e,state)}
@@ -242,7 +269,7 @@ async function ping(cfg){
 }
 
 function load(){try{const o=JSON.parse(localStorage.getItem('hanziai.ai.v1')||'null');return Object.assign({},DEF,o&&typeof o==='object'?o:{})}catch(e){return Object.assign({},DEF)}}
-function save(c){try{localStorage.setItem('hanziai.ai.v1',JSON.stringify({on:!!c.on,url:c.url,model:c.model,timeout:c.timeout}))}catch(e){}}
+function save(c){try{localStorage.setItem('hanziai.ai.v1',JSON.stringify({on:!!c.on,url:c.url,model:c.model,timeout:c.timeout,fmt:c.fmt==='json'?'json':'schema'}))}catch(e){}}
 
-window.HSK_AI={DEF,TYPES,TYPE_VI,STATUS_VI,SYSTEM,SCHEMA,FEWSHOT,hn,buildMessages,parseResult,assess,rules,patternHints,keyHints,localChecks,langBad,review,ping,load,save,validUrl};
+window.HSK_AI={DEF,RV,TYPES,TYPE_VI,STATUS_VI,SYSTEM,SCHEMA,FEWSHOT,hn,buildMessages,parseResult,assess,detailComplete,rules,patternHints,keyHints,localChecks,langBad,review,ping,load,save,validUrl};
 })();

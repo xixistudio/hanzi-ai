@@ -4,7 +4,7 @@
 <style>
 :root{--bg:#f2f5f7;--card:#fff;--ink:#12263a;--mute:#5b6b7a;--line:#d8e0e6;--accent:#0f8b7a;--seal:#c8392b;--warn:#b7791f}
 @media(prefers-color-scheme:dark){:root{--bg:#0e1a24;--card:#152634;--ink:#e6eef4;--mute:#8da1b2;--line:#27394a;--accent:#3fc1ac;--seal:#ef6a5b;--warn:#e0a84a}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,"Segoe UI",sans-serif;padding:16px;max-width:1200px;margin:auto}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,"Segoe UI",sans-serif;padding:16px;max-width:1250px;margin:auto}
 h1{font-size:1.2rem;margin:0 0 4px}.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin:12px 0}
 input,select{font:inherit;background:var(--bg);color:inherit;border:1px solid var(--line);border-radius:8px;padding:7px 9px}
 button{font:inherit;border:0;border-radius:8px;padding:8px 14px;background:var(--accent);color:#fff;font-weight:600;cursor:pointer}button.g{background:none;color:var(--ink);border:1px solid var(--line)}button:disabled{opacity:.5;cursor:default}
@@ -14,25 +14,31 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{border-top:1px s
 .pass{color:var(--accent);font-weight:700}.wrong{color:var(--seal);font-weight:700}.uns{color:var(--warn);font-weight:700}
 .tbl{overflow-x:auto}small{color:var(--mute)}
 </style></head><body>
-<h1>Kiểm thử nhận xét AI – dịch câu HSK 1 (phiên bản 2)</h1>
-<div class="mute">Trang này gọi Ollama thật trên máy bạn. Cần chạy từ đúng địa chỉ GitHub Pages của Hanzi AI (để Ollama chấp nhận nguồn). Nhãn "đúng/sai" do Claude soạn, chưa được người bản ngữ xác nhận. Kết quả cuối có 3 trạng thái: Phù hợp / Cần xem lại / Chưa chắc.</div>
+<h1>Kiểm thử nhận xét AI – dịch câu HSK 1 (phiên bản 3)</h1>
+<div class="mute">Trang này gọi Ollama thật trên máy bạn. Cần chạy từ đúng địa chỉ GitHub Pages của Hanzi AI (để Ollama chấp nhận nguồn). Nhãn "đúng/sai" do Claude soạn, chưa được người bản ngữ xác nhận. Kết quả cuối có 3 trạng thái: Phù hợp / Cần xem lại / Chưa chắc. Để so sánh hai định dạng: chạy một lần với "JSON Schema", rồi một lần với "JSON thường".</div>
 <div class="card">
  <div class="row"><label>Địa chỉ Ollama <input id="url" size="26"></label><label>Model <input id="model" size="16"></label>
- <label>Chờ tối đa <select id="to"><option>60</option><option selected>120</option><option>180</option></select> giây/câu</label></div>
+ <label>Chờ tối đa <select id="to"><option>60</option><option selected>120</option><option>180</option></select> giây/câu</label>
+ <label>Định dạng trả lời <select id="fmt"><option value="schema">JSON Schema</option><option value="json">JSON thường</option></select></label></div>
  <div class="row"><label><input type="checkbox" id="skip"> Bỏ qua AI khi bài khớp đúng đáp án/đáp án phụ trong dữ liệu (giống app thật). Mặc định tắt: gửi tất cả ca cho AI để thử độ chắc của model.</label></div>
  <div class="row"><button id="ping" class="g">Kiểm tra kết nối</button><button id="run">Chạy cả các ca</button><button id="stop" class="g" disabled>Dừng</button><button id="dl" class="g" disabled>Tải kết quả (JSON)</button><span id="st" class="mute"></span></div>
 </div>
 <div class="card" id="sum" hidden></div>
+<div class="card" id="cmp" hidden></div>
 <div class="card tbl"><table><thead><tr><th>Ca</th><th>Bài làm của người học</th><th>Kỳ vọng</th><th>Trạng thái cuối</th><th>AI nói</th><th>Lỗi AI nêu (đã lọc) / bị ẩn</th><th>Gợi ý bằng quy tắc</th><th>Kết quả</th><th>Giây</th></tr></thead><tbody id="tb"></tbody></table></div>
 <script src="hsk-t-hsk1.js"></script><script src="hsk-ai.js"></script><script src="hsk-ai-tests.js"></script>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const C=HSK_AI.load();$('#url').value=C.url;$('#model').value=C.model;$('#to').value=String(C.timeout);
-const cfg=()=>({url:$('#url').value,model:$('#model').value,timeout:+$('#to').value});
+const C=HSK_AI.load();$('#url').value=C.url;$('#model').value=C.model;$('#to').value=String(C.timeout);$('#fmt').value=C.fmt==='json'?'json':'schema';
+const cfg=()=>({url:$('#url').value,model:$('#model').value,timeout:+$('#to').value,fmt:$('#fmt').value});
 const items=Object.fromEntries(HSK_T.sentences.map(s=>[s.id,s]));
-const N=HSK_AI_TESTS.length,ST=HSK_AI.STATUS_VI,VD={correct:'correct (đúng)',has_error:'has_error (có lỗi)',unsure:'unsure (không chắc)'};
+const N=HSK_AI_TESTS.length,ST=HSK_AI.STATUS_VI,TV=HSK_AI.TYPE_VI,VD={correct:'correct (đúng)',has_error:'has_error (có lỗi)',unsure:'unsure (không chắc)'};
+const FM={schema:'JSON Schema',json:'JSON thường'};
 const EXP={ok:'Đúng',soft:'Mơ hồ (không được báo sai chắc chắn)',bad:'Có lỗi'};
-let R={},stop=false,ctl=null;
+/* Kết quả lần chạy trước (bản 2, JSON Schema, chưa có quote) do chủ dự án chạy ngày 26/11/2026, để so sánh trước/sau. */
+const BASE={ok:{fit:18,unsure:2,review:2},soft:{pass:2,wrong:2},bad:{review:19,unsure:6,fit:1},typeHit:9};
+let RUNS={},cur=null,stop=false,ctl=null;
+const R=()=>cur?RUNS[cur].R:{};
 $('#run').textContent='Chạy cả '+N+' ca';
 $('#tb').innerHTML=HSK_AI_TESTS.map(t=>'<tr id="r-'+t.id+'"><td>'+t.id+'<br><small>'+t.item+'</small></td><td class="zh">'+esc(t.ans)+'<br><small>'+esc(t.note)+'</small></td><td>'+EXP[t.exp]+'</td><td colspan="6" class="mute">chưa chạy</td></tr>').join('');
 const exactData=t=>{const it=items[t.item],n=HSK_AI.hn(t.ans);return [it.zh].concat((it.alt||[]).map(a=>a.zh)).some(z=>HSK_AI.hn(z)===n)};
@@ -53,44 +59,74 @@ function row(t,r,j,sec){
  if(r.skipped){tr.innerHTML=base+'<td colspan="5" class="mute">không gọi AI</td><td class="'+j.k+'">'+esc(j.label)+'</td><td>'+sec+'</td>';return}
  const x=r.result;
  tr.innerHTML=base+'<td><b>'+ST[x.status]+'</b>'+(x.reasons.length?'<br><small>'+x.reasons.map(esc).join(' ')+'</small>':'')+'</td>'+
- '<td>'+esc(VD[x.verdict])+'<br><small>tin cậy: '+x.confidence+(x.schema==='json'?' · lùi về format json':'')+(r.attempts>1?' · thử lại '+(r.attempts-1)+' lần':'')+'</small><br><small>'+esc(x.summary)+'</small>'+(x.notes?'<br><small>ghi chú: '+esc(x.notes)+'</small>':'')+(x.langWarn.length?'<br><small class="uns">lẫn ngôn ngữ: '+x.langWarn.join(', ')+'</small>':'')+'</td>'+
- '<td>'+(x.issues.map(i=>'<b>'+i.type+'</b>: '+esc(i.detail)).join('<br>')||'—')+(x.dropped.length?'<br><small class="uns">Bị ẩn ('+x.dropped.length+'): '+x.dropped.map(d=>d.type+' – '+esc(d.detail)+' ['+d.why+']').join('; ')+'</small>':'')+'</td>'+
+ '<td>'+esc(VD[x.verdict])+'<br><small>tự tin: '+x.confidence+' (không dùng để quyết định)'+(x.schema==='json'?' · đang ở chế độ json':'')+(r.attempts>1?' · thử lại '+(r.attempts-1)+' lần':'')+'</small><br><small>'+(x.summary?esc(x.summary):'<i>summary bị ẩn'+(x.summaryHidden?' (mâu thuẫn với verdict)':'')+'</i>')+'</small>'+(x.notes?'<br><small>ghi chú: '+esc(x.notes)+'</small>':'')+(x.langWarn.length?'<br><small class="uns">lẫn ngôn ngữ: '+x.langWarn.join(', ')+'</small>':'')+'</td>'+
+ '<td>'+(x.issues.map(i=>'<b>'+i.type+'</b>'+(i.relabeled?' <small>(AI gọi: '+i.relabeled+')</small>':'')+(i.quote?' <span class="zh">「'+esc(i.quote)+'」</span>':'')+': '+esc(i.detail)).join('<br>')||'—')+(x.dropped.length?'<br><small class="uns">Bị ẩn ('+x.dropped.length+'): '+x.dropped.map(d=>d.type+(d.quote?' 「'+esc(d.quote)+'」':'')+' – '+esc(d.detail)+' ['+d.why+']').join('; ')+'</small>':'')+'</td>'+
  '<td>'+(x.hints.map(h=>'<small class="'+(h.soft?'mute':'pass')+'">'+h.id+(h.soft?' (nhẹ)':'')+': '+esc(h.detail)+'</small>').join('<br>')||'—')+'</td>'+
  '<td class="'+j.k+'">'+esc(j.label)+'</td><td>'+sec+'</td>';
 }
-function summary(){
- const rows=HSK_AI_TESTS.filter(t=>R[t.id]);if(!rows.length)return;
- const g=e=>rows.filter(t=>t.exp===e),c=(arr,k)=>arr.filter(t=>R[t.id].j.k===k).length;
+function metrics(Rr){
+ const rows=HSK_AI_TESTS.filter(t=>Rr[t.id]);
+ const g=e=>rows.filter(t=>t.exp===e),st=(arr,s)=>arr.filter(t=>Rr[t.id].r.ok&&!Rr[t.id].r.skipped&&Rr[t.id].r.result.status===s).length,jk=(arr,k)=>arr.filter(t=>Rr[t.id].j.k===k).length;
  const ok=g('ok'),soft=g('soft'),bad=g('bad');
- const errs=rows.filter(t=>!R[t.id].r.ok),fmt=errs.filter(t=>R[t.id].r.error.code==='format').length,tmo=errs.filter(t=>R[t.id].r.error.code==='timeout').length;
- const okR=rows.filter(t=>R[t.id].r.ok&&!R[t.id].r.skipped),secs=okR.map(t=>R[t.id].ms/1000),avg=secs.length?(secs.reduce((a,b)=>a+b,0)/secs.length).toFixed(1):'–';
- const res=t=>R[t.id].r.result,hit=bad.filter(t=>R[t.id].r.ok&&R[t.id].j.typeHit).length;
- const fb=okR.filter(t=>res(t).schema==='json').length,lang=okR.filter(t=>res(t).langWarn.length).length,dropped=okR.reduce((n,t)=>n+res(t).dropped.length,0);
- const hintOk=ok.concat(soft).filter(t=>R[t.id].r.ok&&!R[t.id].r.skipped&&res(t).hints.length).length;
- $('#sum').hidden=false;$('#sum').innerHTML='<b>Tổng hợp ('+rows.length+'/'+N+' ca đã chạy)</b><ul>'+
- '<li>Câu ĐÚNG ('+ok.length+'): phù hợp '+c(ok,'pass')+', chưa chắc '+c(ok,'uns')+', <span class="wrong">báo động giả mạnh '+c(ok,'wrong')+'</span></li>'+
- '<li>Câu MƠ HỒ ('+soft.length+'): đạt '+c(soft,'pass')+', <span class="wrong">kết luận sai chắc chắn '+c(soft,'wrong')+'</span></li>'+
- '<li>Câu CÓ LỖI ('+bad.length+'): cần xem lại '+c(bad,'pass')+', chưa chắc '+c(bad,'uns')+', <span class="wrong">bỏ sót (Phù hợp) '+c(bad,'wrong')+'</span></li>'+
- '<li>Gọi đúng loại lỗi: '+hit+'/'+bad.length+' ca có lỗi (chỉ số phụ)</li>'+
- '<li>Quy tắc bằng mã có gợi ý trên câu đúng/mơ hồ: '+hintOk+' ca</li>'+
- '<li>Lỗi định dạng JSON: '+fmt+' · Quá thời gian: '+tmo+' · Lỗi khác: '+(errs.length-fmt-tmo)+' · Lùi về format json: '+fb+' · Lẫn ngôn ngữ: '+lang+' · Nhận xét bị ẩn vì thiếu căn cứ: '+dropped+'</li>'+
- '<li>Thời gian trung bình: '+avg+' giây/câu</li></ul><small>Model: '+esc($('#model').value)+'</small>';
+ const okR=rows.filter(t=>Rr[t.id].r.ok&&!Rr[t.id].r.skipped),res=t=>Rr[t.id].r.result;
+ const errs=rows.filter(t=>!Rr[t.id].r.ok),why=w=>okR.reduce((n,t)=>n+res(t).dropped.filter(d=>d.why.indexOf(w)===0).length,0);
+ const secs=okR.map(t=>Rr[t.id].ms/1000);
+ return {n:rows.length,ok:{n:ok.length,fit:st(ok,'fit'),unsure:st(ok,'unsure'),review:st(ok,'review')},soft:{n:soft.length,pass:jk(soft,'pass'),wrong:jk(soft,'wrong')},bad:{n:bad.length,review:st(bad,'review'),unsure:st(bad,'unsure'),fit:st(bad,'fit')},
+  typeHit:bad.filter(t=>Rr[t.id].r.ok&&Rr[t.id].j.typeHit).length,
+  errs:errs.length,fmt:errs.filter(t=>Rr[t.id].r.error.code==='format').length,tmo:errs.filter(t=>Rr[t.id].r.error.code==='timeout').length,
+  cut:why('lời giải thích bị cụt'),noQuote:why('thiếu đoạn trích')+why('đoạn trích không có'),inRef:why('đoạn trích đã có'),langDrop:why('lẫn ngôn ngữ'),
+  sumHidden:okR.filter(t=>res(t).summaryHidden).length,fallback:okR.filter(t=>res(t).schema==='json'&&Rr[t.id].mode==='schema').length,
+  hintOk:ok.concat(soft).filter(t=>Rr[t.id].r.ok&&!Rr[t.id].r.skipped&&res(t).hints.length).length,
+  unknownType:okR.reduce((n,t)=>n+res(t).issues.filter(i=>i.type==='unknown').length,0),relabeled:okR.reduce((n,t)=>n+res(t).issues.filter(i=>i.relabeled).length,0),
+  avg:secs.length?(secs.reduce((a,b)=>a+b,0)/secs.length).toFixed(1):'–'};
+}
+function summary(){
+ if(!cur)return;const m=metrics(R());if(!m.n)return;
+ $('#sum').hidden=false;$('#sum').innerHTML='<b>Tổng hợp – '+FM[cur]+' ('+m.n+'/'+N+' ca đã chạy)</b><ul>'+
+ '<li>Câu ĐÚNG ('+m.ok.n+'): phù hợp '+m.ok.fit+', chưa chắc '+m.ok.unsure+', <span class="wrong">báo động giả mạnh '+m.ok.review+'</span> <small>(bản 2: 18 / 2 / 2)</small></li>'+
+ '<li>Câu MƠ HỒ ('+m.soft.n+'): đạt '+m.soft.pass+', <span class="wrong">kết luận sai chắc chắn '+m.soft.wrong+'</span> <small>(bản 2: 2 / 2)</small></li>'+
+ '<li>Câu CÓ LỖI ('+m.bad.n+'): cần xem lại '+m.bad.review+', chưa chắc '+m.bad.unsure+', <span class="wrong">bỏ sót (Phù hợp) '+m.bad.fit+'</span> <small>(bản 2: 19 / 6 / 1)</small></li>'+
+ '<li>Gọi đúng loại lỗi: '+m.typeHit+'/'+m.bad.n+' ca có lỗi (chỉ số phụ; bản 2: 9, theo nhãn K16, K18, K30 = meaning, K21 = grammar)</li>'+
+ '<li>Lỗi bị ẩn: lời giải thích bị cụt '+m.cut+' · thiếu hoặc sai đoạn trích '+m.noQuote+' · đoạn trích có trong bản tham khảo '+m.inRef+' · lẫn ngôn ngữ '+m.langDrop+' · loại lỗi "chưa rõ" '+m.unknownType+' · nhãn bị chỉnh '+m.relabeled+' · summary bị ẩn '+m.sumHidden+'</li>'+
+ '<li>Quy tắc bằng mã có gợi ý trên câu đúng/mơ hồ: '+m.hintOk+' ca · Lỗi định dạng JSON: '+m.fmt+' · Quá thời gian: '+m.tmo+' · Lỗi khác: '+(m.errs-m.fmt-m.tmo)+'</li>'+
+ '<li>Thời gian trung bình: '+m.avg+' giây/câu</li></ul><small>Model: '+esc($('#model').value)+' · định dạng: '+FM[cur]+'</small>';
+ compare();
+}
+function compare(){
+ const a=RUNS.schema,b=RUNS.json;if(!a||!b){$('#cmp').hidden=true;return}
+ const ma=metrics(a.R),mb=metrics(b.R);let diff=[];
+ HSK_AI_TESTS.forEach(t=>{const x=a.R[t.id],y=b.R[t.id];if(!x||!y||!x.r.ok||!y.r.ok||x.r.skipped||y.r.skipped)return;const sa=x.r.result.status,sb=y.r.result.status;if(sa!==sb)diff.push(t.id+' ('+t.exp+'): Schema='+ST[sa]+' · JSON thường='+ST[sb])});
+ const line=(l,f)=>'<tr><td>'+l+'</td><td>'+f(ma)+'</td><td>'+f(mb)+'</td></tr>';
+ $('#cmp').hidden=false;$('#cmp').innerHTML='<b>So sánh JSON Schema và JSON thường</b><div class="tbl"><table><thead><tr><th></th><th>JSON Schema ('+ma.n+' ca)</th><th>JSON thường ('+mb.n+' ca)</th></tr></thead><tbody>'+
+ line('Câu đúng: phù hợp / chưa chắc / báo động giả mạnh',m=>m.ok.fit+' / '+m.ok.unsure+' / '+m.ok.review)+
+ line('Câu mơ hồ: đạt / kết luận sai chắc chắn',m=>m.soft.pass+' / '+m.soft.wrong)+
+ line('Câu có lỗi: cần xem lại / chưa chắc / bỏ sót',m=>m.bad.review+' / '+m.bad.unsure+' / '+m.bad.fit)+
+ line('Gọi đúng loại lỗi',m=>m.typeHit+'/'+m.bad.n)+
+ line('Lời giải thích bị cụt (đã ẩn)',m=>m.cut)+
+ line('Thiếu/sai đoạn trích',m=>m.noQuote)+
+ line('Lỗi định dạng JSON',m=>m.fmt)+
+ line('Thời gian trung bình (giây)',m=>m.avg)+
+ '</tbody></table></div><p>Ca có trạng thái khác nhau giữa hai chế độ ('+diff.length+'): '+(diff.length?esc(diff.join(' | ')):'không có')+'</p>';
 }
 $('#ping').onclick=async()=>{$('#st').textContent='Đang kiểm tra…';const r=await HSK_AI.ping(cfg());$('#st').textContent=r.ok?('Kết nối được. Model '+(r.hasModel?'đã cài.':'CHƯA cài. Chạy: ollama pull '+cfg().model)+' (đang có: '+r.models.join(', ')+')'):r.error.msg};
 $('#run').onclick=async()=>{
- stop=false;$('#run').disabled=true;$('#stop').disabled=false;$('#dl').disabled=true;R={};
+ stop=false;$('#run').disabled=true;$('#stop').disabled=false;$('#dl').disabled=true;
+ const mode=$('#fmt').value;cur=mode;RUNS[mode]={R:{},when:new Date().toISOString(),model:$('#model').value};
  for(const t of HSK_AI_TESTS){
-  if(stop)break;$('#st').textContent='Đang chạy '+t.id+'…';
+  if(stop)break;$('#st').textContent='Đang chạy '+t.id+' ('+FM[mode]+')…';
   ctl=new AbortController();const t0=Date.now();
   let r;
   if($('#skip').checked&&exactData(t))r={ok:true,skipped:true,result:null};
   else r=await HSK_AI.review(items[t.item],t.ans,cfg(),{signal:ctl.signal});
-  const ms=Date.now()-t0,j=judge(t,r);R[t.id]={r,j,ms};row(t,r,j,r.skipped?'–':(ms/1000).toFixed(1));summary();
+  const ms=Date.now()-t0,j=judge(t,r);RUNS[mode].R[t.id]={r,j,ms,mode};row(t,r,j,r.skipped?'–':(ms/1000).toFixed(1));summary();
   if(!r.ok&&(r.error.code==='network'||r.error.code==='origin'||r.error.code==='model'||r.error.code==='cancel')){break}
  }
- $('#run').disabled=false;$('#stop').disabled=true;$('#dl').disabled=!Object.keys(R).length;$('#st').textContent=stop?'Đã dừng.':'Xong.';
+ $('#run').disabled=false;$('#stop').disabled=true;$('#dl').disabled=!Object.keys(RUNS[mode].R).length;$('#st').textContent=stop?'Đã dừng.':'Xong ('+FM[mode]+').';
+ summary();
 };
 $('#stop').onclick=()=>{stop=true;if(ctl)ctl.abort()};
-$('#dl').onclick=()=>{const out={version:2,model:$('#model').value,when:new Date().toISOString(),results:HSK_AI_TESTS.filter(t=>R[t.id]).map(t=>({id:t.id,item:t.item,ans:t.ans,exp:t.exp,expTypes:t.types||null,verdict:R[t.id].j.label,ms:R[t.id].ms,skipped:!!R[t.id].r.skipped,final:R[t.id].r.ok&&!R[t.id].r.skipped?R[t.id].r.result:null,attempts:R[t.id].r.attempts||null,error:R[t.id].r.ok?null:R[t.id].r.error,raw:R[t.id].r.raw||(R[t.id].r.error&&R[t.id].r.error.raw)||null}))};
- const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,1)],{type:'application/json'}));a.download='ai-test-ket-qua.json';a.click();URL.revokeObjectURL(a.href)};
+$('#dl').onclick=()=>{
+ const runs={};for(const m of Object.keys(RUNS)){const Rr=RUNS[m].R;runs[m]={when:RUNS[m].when,model:RUNS[m].model,metrics:metrics(Rr),results:HSK_AI_TESTS.filter(t=>Rr[t.id]).map(t=>({id:t.id,item:t.item,ans:t.ans,exp:t.exp,expTypes:t.types||null,verdict:Rr[t.id].j.label,ms:Rr[t.id].ms,skipped:!!Rr[t.id].r.skipped,final:Rr[t.id].r.ok&&!Rr[t.id].r.skipped?Rr[t.id].r.result:null,attempts:Rr[t.id].r.attempts||null,error:Rr[t.id].r.ok?null:Rr[t.id].r.error,raw:Rr[t.id].r.raw||(Rr[t.id].r.error&&Rr[t.id].r.error.raw)||null}))}}
+ const out={version:3,when:new Date().toISOString(),runs};
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,1)],{type:'application/json'}));a.download='ai-test-ket-qua-v3.json';a.click();URL.revokeObjectURL(a.href)};
 </script></body></html>
