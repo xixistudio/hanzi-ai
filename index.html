@@ -265,8 +265,10 @@ $('#hall').onclick=()=>{if(!window.HSK)return;const lv=$('#hl').value;const rows
 /* Chi tiết từ + cách viết */
 const POS={n:'danh từ',v:'động từ',a:'tính từ',d:'phó từ',m:'số từ',q:'lượng từ',r:'đại từ',p:'giới từ',c:'liên từ',u:'trợ từ',y:'trợ từ ngữ khí',e:'thán từ',o:'từ tượng thanh',t:'từ chỉ thời gian',f:'từ phương vị',s:'từ chỉ nơi chốn',l:'cụm từ cố định',nr:'tên người',ns:'địa danh',nt:'tên tổ chức',nz:'danh từ riêng',vn:'động từ (làm danh từ)',ad:'tính từ (làm phó từ)',an:'tính từ (làm danh từ)',b:'từ phân biệt',g:'hình vị',z:'từ trạng thái',cc:'liên từ đẳng lập',mq:'số lượng từ',qv:'lượng từ (động)',qt:'lượng từ (thời gian)'};
 let WR=[];
-function loadDetail(cb){if(window.HSK_D)return cb();const s=document.createElement('script');s.src='hsk-detail.js';s.onload=cb;s.onerror=()=>{toast('Chưa tải được hsk-detail.js. Hãy tải file này lên cùng chỗ với index.html.');cb()};document.head.appendChild(s)}
+function loadGloss(cb){if(window.HSK_GL)return cb();const g=document.createElement('script');g.src='hsk-gloss-vi.js';g.onload=cb;g.onerror=()=>cb();document.head.appendChild(g)}
+function loadDetail(cb){if(window.HSK_D)return loadGloss(cb);const s=document.createElement('script');s.src='hsk-detail.js';s.onload=()=>loadGloss(cb);s.onerror=()=>{toast('Chưa tải được hsk-detail.js. Hãy tải file này lên cùng chỗ với index.html.');cb()};document.head.appendChild(s)}
 function findRow(h){for(const lv in (window.HSK||{})){const r=window.HSK[lv].find(x=>x[0]===h);if(r)return{r,lv}}return null}
+function glossLi(m){const v=window.HSK_GL&&window.HSK_GL[m];return v&&v!==m?esc(v)+' <span class="c">'+(/^\([^()]*\)$/.test(m)?esc(m):'('+esc(m)+')')+'</span>':esc(m)}
 function openDetail(h){loadDetail(()=>showDetail(h))}
 function showDetail(h){
   const f=findRow(h),w=S.words.find(x=>x.h===h),D=(window.HSK_D||{})[h],vi=HV()[h]||(w&&w.m)||'',pin=f?f.r[1]:(w?w.p:'');
@@ -274,7 +276,7 @@ function showDetail(h){
   if(D)x+='<div class="bar" style="justify-content:center">'+D[0].map(p=>`<span class="tag">${esc(POS[p]||p)}</span>`).join('')+'</div>';
   if(vi)x+=`<h2 style="margin-top:14px">Nghĩa tiếng Việt</h2><p style="margin:0">${esc(vi)}</p>`;
   if(D){x+='<h2 style="margin-top:14px">Tất cả các nghĩa</h2>';
-    D[2].forEach(g=>{x+=`<p style="margin:8px 0 2px"><b>${esc(g[1])}</b>${g[0]!==h?' · phồn thể <span class="zh">'+esc(g[0])+'</span>':''}</p><ol class="def">${g[2].map(m=>`<li>${esc(m)}</li>`).join('')}</ol>`+(g[3].length?`<p class="c" style="text-align:left;margin:0">Lượng từ: <span class="zh">${g[3].map(esc).join(', ')}</span></p>`:'')});
+    D[2].forEach(g=>{x+=`<p style="margin:8px 0 2px"><b>${esc(g[1])}</b>${g[0]!==h?' · phồn thể <span class="zh">'+esc(g[0])+'</span>':''}</p><ol class="def">${g[2].map(m=>`<li>${glossLi(m)}</li>`).join('')}</ol>`+(g[3].length?`<p class="c" style="text-align:left;margin:0">Lượng từ: <span class="zh">${g[3].map(esc).join(', ')}</span></p>`:'')});
     if(D[1])x+=`<p class="c" style="text-align:left">Bộ thủ: <span class="zh">${esc(D[1])}</span></p>`}
   x+='<h2 style="margin-top:14px">Cách viết</h2><div id="wr" class="bar"></div><div class="bar"><button class="btn ghost" id="wanim">Xem lại nét</button><button class="btn ghost" id="wquiz">Tập viết</button></div>';
   const ex=(window.HSK_EX||{})[h];
