@@ -124,6 +124,13 @@ body.wide header,body.wide nav,body.wide main{max-width:1180px}
 #trans .rs ul{margin:4px 0;padding-left:20px}
 #trans .un{font-size:.8rem;color:var(--mute)}
 #trans .kp b.y{color:var(--accent)}#trans .kp b.n{color:var(--mute)}
+#trans .ph{font-size:1.35rem;margin:0}#trans .ph small{color:var(--mute);font-weight:400;font-size:.95rem}
+#trans .prow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:10px 0 14px;color:var(--mute)}
+#trans .pill{background:color-mix(in srgb,var(--seal) 14%,var(--card));color:color-mix(in srgb,var(--seal) 78%,var(--ink));border-radius:99px;padding:3px 14px;font-size:.95rem;white-space:nowrap}
+#trans .sh{font-size:1.2rem;margin:16px 0 10px}#trans .big2{font-size:1.25rem;line-height:1.7;margin:0}
+#trans .pillbtn{width:100%;border-radius:99px;padding:14px;font-size:1.05rem}
+#trans .btn:disabled{background:var(--line);color:var(--mute);cursor:not-allowed}
+#trans .lnk{background:none;border:0;color:var(--mute);cursor:pointer;padding:8px 2px}#trans .lnk:disabled{opacity:.4;cursor:default}
 </style>
 </head>
 <body>
@@ -761,23 +768,25 @@ function view(){
  let h='<div class="card"><div class="bar" style="margin:0 0 8px"><button class="btn ghost" id="trhome">← Chọn dạng bài</button><span class="stats" style="margin-left:auto">'+M.n+' · đã làm '+done+'/'+us.length+'</span></div>';
  h+='<div class="pb" role="progressbar" aria-valuemin="0" aria-valuemax="'+us.length+'" aria-valuenow="'+done+'"><i style="width:'+Math.round(100*done/us.length)+'%"></i></div>';
  h+='<div class="chips" role="group" aria-label="Chọn bài">'+us.map((x,j)=>'<button data-j="'+j+'" class="'+(isDone(x)?'done ':'')+(j===i?'cur':'')+'" aria-label="Bài '+(j+1)+(isDone(x)?' đã làm':'')+'"'+(j===i?' aria-current="true"':'')+'>'+(j+1)+'</button>').join('')+'</div></div>';
- h+='<div class="card"><div class="stats"><span><b>'+esc(u.title)+'</b> ('+(i+1)+'/'+us.length+')</span><span class="tag">'+esc(u.topic)+'</span><span class="tag" title="Chưa được giáo viên hoặc người bản ngữ duyệt">Chưa duyệt</span></div>';
+ h+='<div class="card">'+(mode==='para'?'<h3 class="ph">'+esc(u.title)+' <small>('+(i+1)+'/'+us.length+')</small></h3><div class="prow"><span>'+esc(u.topic)+'</span><span class="pill" title="Chưa được giáo viên hoặc người bản ngữ duyệt">Chưa duyệt</span></div>':'<div class="stats"><span><b>'+esc(u.title)+'</b> ('+(i+1)+'/'+us.length+')</span><span class="tag">'+esc(u.topic)+'</span><span class="tag" title="Chưa được giáo viên hoặc người bản ngữ duyệt">Chưa duyệt</span></div>');
  if(mode==='para'){const a=UA(u)||{a:''};
-  h+='<div class="vq" style="margin-top:10px">'+esc(u.vi)+'</div><textarea class="zh" data-id="'+esc(u.id)+'" lang="zh-CN" rows="8" style="min-height:170px" placeholder="Dịch cả đoạn sang tiếng Trung…" aria-label="Bài dịch cả đoạn bằng tiếng Trung">'+esc(a.a||'')+'</textarea>'+(a.c?paraResult(u,a):'')}
+  h+='<h4 class="sh">Đề bài</h4><div class="vq big2">'+esc(u.vi)+'</div><h4 class="sh">Bản dịch tiếng Trung của bạn</h4><textarea class="zh" data-id="'+esc(u.id)+'" lang="zh-CN" rows="9" style="min-height:200px" placeholder="请输入中文翻译......" aria-label="Bài dịch cả đoạn bằng tiếng Trung">'+esc(a.a||'')+'</textarea>'+
+   '<div class="bar"><button class="btn pillbtn" id="trcheck"'+(hn(a.a)?'':' disabled')+'>Kiểm tra đáp án</button></div>'+(a.c?paraResult(u,a):'')+(checked?'<div class="bar"><button class="btn ghost" id="trredo">Làm lại bài này</button></div>':'')}
  if(mode==='dlg')h+='<div class="ctx"><b>Bối cảnh:</b> '+esc(u.scene)+'</div>';
  if(mode!=='para')u.items.forEach((it,k)=>{const a=A(it.id)||{a:''};
   h+='<div class="ti"><div class="vq">'+(mode==='dlg'?'<span class="role">'+esc(it.who)+':</span>':(mode==='para'?'<span class="role">'+(k+1)+'.</span>':''))+esc(it.vi)+'</div>'+
   '<textarea class="zh" data-id="'+esc(it.id)+'" lang="zh-CN" rows="2" placeholder="Viết bằng tiếng Trung…" aria-label="Câu trả lời tiếng Trung '+(k+1)+'">'+esc(a.a||'')+'</textarea>'+
   (a.c?resultHtml(it,a):'')+'</div>'});
- h+='<div class="bar"><button class="btn" id="trcheck">Kiểm tra đáp án</button>'+(checked?'<button class="btn ghost" id="trredo">Làm lại bài này</button>':'')+'</div>';
+ if(mode!=='para')h+='<div class="bar"><button class="btn" id="trcheck">Kiểm tra đáp án</button>'+(checked?'<button class="btn ghost" id="trredo">Làm lại bài này</button>':'')+'</div>';
  if(checked){const s=T.self[u.id];h+='<div class="bar"><span class="c">Bạn tự đánh giá:</span><button class="btn '+(s===1?'':'ghost')+'" data-s="1">Đã đúng ý</button><button class="btn '+(s===0?'':'ghost')+'" data-s="0">Cần ôn lại</button></div>'}
- h+='<div class="bar" style="justify-content:space-between"><button class="btn ghost" id="trprev"'+(i===0?' disabled':'')+'>← Bài trước</button><button class="btn ghost" id="trnext"'+(i===us.length-1?' disabled':'')+'>Bài tiếp →</button></div></div>';
+ const nc=mode==='para'?'lnk':'btn ghost';
+  h+='<div class="bar" style="justify-content:space-between"><button class="'+nc+'" id="trprev"'+(i===0?' disabled':'')+'>← Bài trước</button><button class="'+nc+'" id="trnext"'+(i===us.length-1?' disabled':'')+'>Bài tiếp →</button></div></div>';
  root.innerHTML=h;
  $('#trhome').onclick=home;
  root.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>go(+b.dataset.j));
  $('#trprev').onclick=()=>go(i-1);$('#trnext').onclick=()=>go(i+1);
  const tas=[...root.querySelectorAll('textarea')];
- tas.forEach(t=>{t.oninput=()=>{const id=t.dataset.id,a=T.answers[id]||(T.answers[id]={a:'',c:0});a.a=t.value;persist()};
+ tas.forEach(t=>{t.oninput=()=>{const id=t.dataset.id,a=T.answers[id]||(T.answers[id]={a:'',c:0});a.a=t.value;persist();if(T.mode==='para'){const cb=$('#trcheck');if(cb)cb.disabled=!hn(t.value)}};
   t.onkeydown=e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();check(u)}}});
  $('#trcheck').onclick=()=>check(u);
  const rd=$('#trredo');if(rd)rd.onclick=()=>{u.items.forEach(it=>delete T.answers[it.id]);delete T.answers[u.id];delete T.self[u.id];persist();view()};
