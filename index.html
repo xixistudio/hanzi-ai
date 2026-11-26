@@ -99,6 +99,31 @@ body.wide header,body.wide nav,body.wide main{max-width:1180px}
  #printRoot .pun b{font-weight:400;display:flex;align-items:flex-end}
  #printRoot .psp{display:inline-block}
 }
+/* Luyện dịch */
+#trans .tm{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media(max-width:640px){#trans .tm{grid-template-columns:1fr}}
+#trans .tm button{text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;display:block;width:100%}
+#trans .tm button:hover{border-color:var(--accent)}
+#trans .tm b{display:block;font-size:1.05rem}#trans .tm span{color:var(--mute);font-size:.9rem;display:block}
+#trans .pb{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:8px}
+#trans .pb i{display:block;height:100%;background:var(--accent)}
+#trans .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+#trans .chips button{min-width:36px;height:34px;border:1px solid var(--line);background:var(--bg);border-radius:8px;cursor:pointer;padding:0 8px}
+#trans .chips button.done{background:color-mix(in srgb,var(--accent) 16%,var(--card));border-color:var(--accent)}
+#trans .chips button.cur{outline:2px solid var(--accent);outline-offset:1px;font-weight:700}
+#trans .ti{border-top:1px solid var(--line);padding:12px 0}#trans .ti:first-of-type{border-top:0}
+#trans .vq{font-size:1.1rem;margin:4px 0 8px}
+#trans .role{display:inline-block;font-weight:700;color:var(--accent);margin-right:6px}
+#trans textarea{min-height:64px;font-size:1.15rem}
+#trans .ctx{border-left:3px solid var(--accent);padding:4px 10px;margin:6px 0 10px;color:var(--mute)}
+#trans .rs{margin-top:8px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+#trans .rm{font-weight:600;margin-bottom:6px}
+#trans .rm.ok{color:var(--accent)}#trans .rm.no{color:var(--seal)}#trans .rm.mu{color:var(--mute);font-weight:400}
+#trans .ref{font-size:1.4rem;margin:2px 0}#trans .rp{color:var(--accent);font-weight:600}
+#trans .rs details{margin-top:6px}#trans .rs summary{cursor:pointer;color:var(--mute)}
+#trans .rs ul{margin:4px 0;padding-left:20px}
+#trans .un{font-size:.8rem;color:var(--mute)}
+#trans .kp b.y{color:var(--accent)}#trans .kp b.n{color:var(--mute)}
 </style>
 </head>
 <body>
@@ -115,6 +140,7 @@ body.wide header,body.wide nav,body.wide main{max-width:1180px}
   <button role="tab" data-t="review" aria-selected="false">Ôn tập</button>
   <button role="tab" data-t="dict" aria-selected="false">Nghe chép</button>
   <button role="tab" data-t="copy" aria-selected="false">Luyện chép</button>
+  <button role="tab" data-t="trans" aria-selected="false">Luyện dịch</button>
   <button role="tab" data-t="data" aria-selected="false">Dữ liệu</button>
 </nav>
 <main>
@@ -211,6 +237,10 @@ body.wide header,body.wide nav,body.wide main{max-width:1180px}
     </aside>
   </div>
 </section>
+<section id="trans" hidden>
+  <div id="trbody"><div class="card"><p class="c">Đang tải bài tập…</p></div></div>
+</section>
+
 <section id="data" hidden>
   <div class="card">
     <h2>Sao lưu dữ liệu</h2>
@@ -630,5 +660,102 @@ document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',
 addEventListener('pagehide',stopSpeak);
 })();
 </script>
+<script>
+/* Luyện dịch (giai đoạn 1): không dùng AI, không đồng bộ. Tiến độ lưu riêng ở hanziai.translation.v1 */
+(function(){
+const TK='hanziai.translation.v1';
+const MODES=[{k:'sentence',n:'Dịch câu',d:'20 câu đơn, từ dễ đến khó',u:'câu'},{k:'para',n:'Dịch đoạn văn',d:'3 đoạn văn ngắn',u:'đoạn'},{k:'dlg',n:'Dịch hội thoại',d:'3 hội thoại',u:'hội thoại'}];
+let T={v:1,answers:{},self:{},pos:{sentence:0,para:0,dlg:0},mode:null};
+try{const r=JSON.parse(localStorage.getItem(TK)||'null');if(r&&r.v===1&&r.answers&&typeof r.answers==='object'){T.answers=r.answers;T.self=r.self||{};T.pos=Object.assign(T.pos,r.pos||{});T.mode=MODES.some(m=>m.k===r.mode)?r.mode:null}}catch(e){}
+function persist(){try{localStorage.setItem(TK,JSON.stringify(T))}catch(e){toast('Không lưu được tiến độ luyện dịch.')}}
+const root=$('#trbody');let loaded=false,loading=false;
+const hn=s=>(String(s).match(/\p{Script=Han}/gu)||[]).join('');
+function units(mode){const B=window.HSK_T;
+ if(mode==='sentence')return B.sentences.map((it,i)=>({id:it.id,title:'Câu '+(i+1),topic:it.topic,items:[it]}));
+ if(mode==='para')return B.paragraphs.map((p,i)=>({id:p.id,title:'Đoạn '+(i+1)+': '+p.title,topic:p.topic,vi:p.vi,items:p.items}));
+ return B.dialogues.map((d,i)=>({id:d.id,title:'Hội thoại '+(i+1)+': '+d.title,topic:d.topic,scene:d.scene,items:d.turns}))}
+const A=id=>T.answers[id];
+const isDone=u=>u.items.every(it=>{const a=A(it.id);return a&&a.c&&hn(a.a)});
+function match(it,a){const n=hn(a);if(!n)return{m:'empty'};if(n===hn(it.zh))return{m:'exact'};
+ if((it.alt||[]).some(x=>hn(x.zh)===n))return{m:'alt'};
+ const av=(it.avoid||[]).find(x=>hn(x.zh)===n);if(av)return{m:'avoid',why:av.why};return{m:'none'}}
+function load(cb){
+ if(window.HSK_T){loaded=true;cb();return}
+ if(loading)return;loading=true;
+ const s=document.createElement('script');s.src='hsk-t-hsk1.js';
+ s.onload=()=>{loading=false;loaded=!!window.HSK_T;loaded?cb():fail()};
+ s.onerror=()=>{loading=false;fail()};document.head.appendChild(s)}
+function fail(){root.innerHTML='<div class="card"><p class="no">Không tải được dữ liệu bài tập (hsk-t-hsk1.js). Hãy tải lại trang hoặc kiểm tra file đã được đưa lên cùng thư mục với index.html.</p></div>'}
+
+function home(){
+ T.mode=null;persist();
+ const B=window.HSK_T;
+ let h='<div class="card"><h2>Luyện dịch Việt → Trung (HSK 1)</h2><p class="c" style="text-align:left">Đọc đề tiếng Việt, tự viết bằng tiếng Trung, rồi so với đáp án tham khảo. Giai đoạn này <b>chưa có chấm tự động bằng AI</b>: máy chỉ so khớp chữ với đáp án trong dữ liệu. Bài tập chưa được giáo viên hoặc người bản ngữ duyệt.</p><div class="tm">';
+ MODES.forEach(m=>{const us=units(m.k),d=us.filter(isDone).length;
+  h+='<button data-m="'+m.k+'"><b>'+m.n+'</b><span>'+m.d+'</span><span>Đã làm '+d+'/'+us.length+' '+m.u+'</span><div class="pb"><i style="width:'+Math.round(100*d/us.length)+'%"></i></div></button>'});
+ h+='</div><div class="bar"><button class="btn ghost" id="trreset">Xóa tiến độ luyện dịch</button></div></div>';
+ root.innerHTML=h;
+ root.querySelectorAll('.tm button').forEach(b=>b.onclick=()=>open(b.dataset.m));
+ $('#trreset').onclick=()=>{if(!confirm('Xóa toàn bộ tiến độ luyện dịch? (Từ vựng và ngữ pháp không bị ảnh hưởng.)'))return;T.answers={};T.self={};T.pos={sentence:0,para:0,dlg:0};persist();home()};
+}
+function open(mode){T.mode=mode;persist();view()}
+function resultHtml(it,a){
+ const r=match(it,a.a);let st;
+ if(r.m==='exact')st='<div class="rm ok">✓ Khớp đáp án tham khảo.</div>';
+ else if(r.m==='alt')st='<div class="rm ok">✓ Khớp một đáp án phụ được chấp nhận.</div>';
+ else if(r.m==='avoid')st='<div class="rm no">✗ Trùng với một lỗi thường gặp: '+esc(r.why)+'</div>';
+ else if(r.m==='empty')st='<div class="rm mu">Bạn chưa nhập câu trả lời.</div>';
+ else st='<div class="rm mu">Chưa khớp chính xác với đáp án nào trong dữ liệu. Điều này không có nghĩa là sai: tiếng Trung có thể diễn đạt bằng nhiều cách. Hãy so với đáp án bên dưới.</div>';
+ const n=hn(a.a);
+ let h='<div class="rs" role="status">'+st+'<div class="ref zh">'+esc(it.zh)+'</div><div class="rp">'+esc(it.py)+'</div><div class="c" style="text-align:left">Dịch ngược: '+esc(it.back_vi)+'</div>';
+ if(it.note)h+='<p style="margin:8px 0 0"><b>Giải thích:</b> '+esc(it.note)+'</p>';
+ if((it.key_points||[]).length&&n){h+='<details class="kp" open><summary>Gợi ý tự động theo cụm từ (không phải chấm điểm)</summary><ul>'+it.key_points.map(k=>{const y=k.zh_ok.some(z=>n.includes(hn(z)));return '<li><b class="'+(y?'y':'n')+'">'+(y?'✓':'–')+'</b> '+esc(k.vi)+' <span class="zh">('+k.zh_ok.map(esc).join(' / ')+')</span></li>'}).join('')+'</ul></details>'}
+ if((it.alt||[]).length)h+='<details><summary>Đáp án phụ được chấp nhận ('+it.alt.length+')</summary><ul>'+it.alt.map(x=>'<li><span class="zh">'+esc(x.zh)+'</span> · '+esc(x.py)+'<br><small>'+esc(x.note)+'</small></li>').join('')+'</ul></details>';
+ if((it.avoid||[]).length)h+='<details><summary>Lỗi thường gặp cần tránh ('+it.avoid.length+')</summary><ul>'+it.avoid.map(x=>'<li><span class="zh">'+esc(x.zh)+'</span><br><small>'+esc(x.why)+'</small></li>').join('')+'</ul></details>';
+ if((it.vocab||[]).length)h+='<details><summary>Từ vựng quan trọng ('+it.vocab.length+')</summary><ul>'+it.vocab.map(x=>'<li><span class="zh">'+esc(x.w)+'</span> · '+esc(x.py)+' · '+esc(x.vi)+'</li>').join('')+'</ul></details>';
+ if((it.grammar||[]).length)h+='<details><summary>Điểm ngữ pháp ('+it.grammar.length+')</summary><ul>'+it.grammar.map(x=>'<li>'+esc(x.name)+' <span class="un">('+(x.gs==='existing'?'có trong mục Ngữ pháp':'đề xuất, chưa có trong mục Ngữ pháp')+')</span></li>').join('')+'</ul></details>';
+ if((it.over||[]).length)h+='<div class="un" style="margin-top:6px">Từ ngoài HSK 1: '+it.over.map(o=>'<span class="zh">'+esc(o.w)+'</span> ('+esc(o.why)+')').join('; ')+'</div>';
+ if((it.needs_check||[]).length)h+='<div class="un" style="margin-top:6px">⚠ Điểm cần người bản ngữ/giáo viên kiểm tra: '+it.needs_check.map(esc).join('; ')+'</div>';
+ return h+'</div>'}
+function view(){
+ const mode=T.mode,M=MODES.find(m=>m.k===mode),us=units(mode);
+ let i=Math.min(Math.max(T.pos[mode]|0,0),us.length-1);T.pos[mode]=i;const u=us[i];
+ const done=us.filter(isDone).length,checked=u.items.some(it=>A(it.id)&&A(it.id).c);
+ let h='<div class="card"><div class="bar" style="margin:0 0 8px"><button class="btn ghost" id="trhome">← Chọn dạng bài</button><span class="stats" style="margin-left:auto">'+M.n+' · đã làm '+done+'/'+us.length+'</span></div>';
+ h+='<div class="pb" role="progressbar" aria-valuemin="0" aria-valuemax="'+us.length+'" aria-valuenow="'+done+'"><i style="width:'+Math.round(100*done/us.length)+'%"></i></div>';
+ h+='<div class="chips" role="group" aria-label="Chọn bài">'+us.map((x,j)=>'<button data-j="'+j+'" class="'+(isDone(x)?'done ':'')+(j===i?'cur':'')+'" aria-label="Bài '+(j+1)+(isDone(x)?' đã làm':'')+'"'+(j===i?' aria-current="true"':'')+'>'+(j+1)+'</button>').join('')+'</div></div>';
+ h+='<div class="card"><div class="stats"><span><b>'+esc(u.title)+'</b> ('+(i+1)+'/'+us.length+')</span><span class="tag">'+esc(u.topic)+'</span><span class="tag" title="Chưa được giáo viên hoặc người bản ngữ duyệt">Chưa duyệt</span></div>';
+ if(mode==='para')h+='<div class="ctx"><b>Cả đoạn:</b> '+esc(u.vi)+'<br><small>Dịch từng câu bên dưới.</small></div>';
+ if(mode==='dlg')h+='<div class="ctx"><b>Bối cảnh:</b> '+esc(u.scene)+'</div>';
+ u.items.forEach((it,k)=>{const a=A(it.id)||{a:''};
+  h+='<div class="ti"><div class="vq">'+(mode==='dlg'?'<span class="role">'+esc(it.who)+':</span>':(mode==='para'?'<span class="role">'+(k+1)+'.</span>':''))+esc(it.vi)+'</div>'+
+  '<textarea class="zh" data-id="'+esc(it.id)+'" lang="zh-CN" rows="2" placeholder="Viết bằng tiếng Trung…" aria-label="Câu trả lời tiếng Trung '+(k+1)+'">'+esc(a.a||'')+'</textarea>'+
+  (a.c?resultHtml(it,a):'')+'</div>'});
+ h+='<div class="bar"><button class="btn" id="trcheck">Kiểm tra đáp án</button>'+(checked?'<button class="btn ghost" id="trredo">Làm lại bài này</button>':'')+'</div>';
+ if(checked){const s=T.self[u.id];h+='<div class="bar"><span class="c">Bạn tự đánh giá:</span><button class="btn '+(s===1?'':'ghost')+'" data-s="1">Đã đúng ý</button><button class="btn '+(s===0?'':'ghost')+'" data-s="0">Cần ôn lại</button></div>'}
+ h+='<div class="bar" style="justify-content:space-between"><button class="btn ghost" id="trprev"'+(i===0?' disabled':'')+'>← Bài trước</button><button class="btn ghost" id="trnext"'+(i===us.length-1?' disabled':'')+'>Bài tiếp →</button></div></div>';
+ root.innerHTML=h;
+ $('#trhome').onclick=home;
+ root.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>go(+b.dataset.j));
+ $('#trprev').onclick=()=>go(i-1);$('#trnext').onclick=()=>go(i+1);
+ const tas=[...root.querySelectorAll('textarea')];
+ tas.forEach(t=>{t.oninput=()=>{const id=t.dataset.id,a=T.answers[id]||(T.answers[id]={a:'',c:0});a.a=t.value;persist()};
+  t.onkeydown=e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();check(u)}}});
+ $('#trcheck').onclick=()=>check(u);
+ const rd=$('#trredo');if(rd)rd.onclick=()=>{u.items.forEach(it=>delete T.answers[it.id]);delete T.self[u.id];persist();view()};
+ root.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{T.self[u.id]=+b.dataset.s;persist();view()});
+}
+function go(j){T.pos[T.mode]=j;persist();view();window.scrollTo({top:0})}
+function check(u){
+ const tas=[...root.querySelectorAll('textarea')];
+ if(!tas.some(t=>hn(t.value))){toast('Hãy nhập câu trả lời tiếng Trung trước.');return}
+ tas.forEach(t=>{const a=T.answers[t.dataset.id]||(T.answers[t.dataset.id]={a:'',c:0});a.a=t.value;a.c=1});
+ persist();view();
+ const f=root.querySelector('.rs');if(f)f.scrollIntoView({block:'nearest',behavior:'smooth'})}
+function show(){if(!loaded){load(show);return}T.mode&&MODES.some(m=>m.k===T.mode)?view():home()}
+document.querySelectorAll('#tabs button').forEach(b=>{if(b.dataset.t==='trans')b.addEventListener('click',show)});
+})();
+</script>
+
 </body>
 </html>
