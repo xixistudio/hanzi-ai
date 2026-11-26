@@ -45,6 +45,60 @@ textarea{min-height:90px}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
 #toast.on{opacity:1}
 @media(prefers-reduced-motion:reduce){#toast{transition:none}}
+/* Luyện chép */
+body.wide header,body.wide nav,body.wide main{max-width:1180px}
+#copy{--gl:color-mix(in srgb,var(--accent) 38%,transparent);--ds:.55}
+#copy[data-d=light]{--ds:.22}#copy[data-d=mid]{--ds:.55}#copy[data-d=dark]{--ds:1}
+.btn.soft{background:color-mix(in srgb,var(--accent) 12%,var(--card));color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 28%,var(--card))}
+.tb{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.tb label{font-weight:600;display:flex;align-items:center;gap:6px}.tb select{width:auto}
+.tb input[type=checkbox]{width:auto}
+.cgrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
+@media(max-width:820px){.cgrid{grid-template-columns:1fr}}
+#qk{position:sticky;top:8px}@media(max-width:820px){#qk{position:static}}
+#cbody{display:flex;flex-direction:column;gap:6px}
+.ln{display:flex;flex-wrap:wrap;align-items:flex-end;min-height:.6em}
+.gr{display:inline-flex;white-space:nowrap;align-items:flex-end}
+.cc{display:inline-flex;flex-direction:column;align-items:center;margin:0 2px 8px}
+.py{font-size:.78rem;color:var(--accent);font-weight:600;height:1.3em;line-height:1.3;white-space:nowrap}
+#copy.nopy .py{display:none}
+.bx{--cs:calc(var(--mm,10)*4.6px);width:var(--cs);height:var(--cs);padding:0;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:4px;cursor:pointer;display:grid;place-items:center;color:var(--ink);
+ font-size:calc(var(--cs)*.72);line-height:1;font-family:"Kaiti SC","STKaiti","KaiTi","DFKai-SB","Noto Serif CJK SC","PingFang SC","Microsoft YaHei",serif;
+ background-color:var(--card);
+ background-image:linear-gradient(to right,transparent calc(50% - .5px),var(--gl) calc(50% - .5px),var(--gl) calc(50% + .5px),transparent calc(50% + .5px)),linear-gradient(to bottom,transparent calc(50% - .5px),var(--gl) calc(50% - .5px),var(--gl) calc(50% + .5px),transparent calc(50% + .5px))}
+.bx .g{opacity:var(--ds)}
+#copy.hid .bx .g{visibility:hidden}
+.bx.wd{background-color:color-mix(in srgb,var(--accent) 12%,var(--card))}
+.bx.on{outline:2px solid var(--accent);outline-offset:1px}
+.pu{display:inline-flex;flex-direction:column;align-items:flex-start;margin:0 1px 8px}
+.pu i{height:1.3em}#copy.nopy .pu i{display:none}
+.pu b{font-weight:400;height:calc(var(--mm,10)*4.6px);display:flex;align-items:flex-end;min-width:calc(var(--mm,10)*1.9px);font-size:calc(var(--mm,10)*3px);line-height:1.1;color:var(--ink)}
+.spc{display:inline-block;width:calc(var(--mm,10)*2.3px)}
+#qk h2{margin-bottom:6px}
+.qh{display:flex;gap:12px;align-items:center}
+.qh .box{border:1px solid var(--line);border-radius:8px;flex:none;width:130px;height:130px;display:grid;place-items:center;background:var(--bg)}
+.qpy{font-size:1.5rem;font-weight:700;color:var(--accent);line-height:1.2}
+.qm{margin:8px 0 0}.qm small,.qs small{color:var(--mute)}
+.steps{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.steps svg{width:42px;height:42px;border:1px solid var(--line);border-radius:5px;background:var(--bg)}
+.steps .n{display:grid;gap:1px;justify-items:center;font-size:.7rem;color:var(--mute)}
+#spk{display:none}#spk.on{display:contents}
+#printRoot{display:none}
+@page{size:A4;margin:12mm}
+@media print{
+ body>*:not(#printRoot){display:none!important}
+ body{background:#fff}
+ #printRoot{display:block;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ #printRoot .pr{display:flex;align-items:flex-end;break-inside:avoid;page-break-inside:avoid;margin-bottom:2.2mm}
+ #printRoot .pc{display:flex;flex-direction:column;align-items:center;margin-right:.6mm}
+ #printRoot .pp{font:7.5pt/4mm system-ui,sans-serif;height:4mm;color:#333;white-space:nowrap}
+ #printRoot .pb{box-sizing:border-box;border:.25mm solid #777;display:grid;place-items:center;font-family:"Kaiti SC","STKaiti","KaiTi","DFKai-SB","Noto Serif CJK SC","PingFang SC","Microsoft YaHei",serif;line-height:1;
+  background-image:linear-gradient(to right,transparent calc(50% - .1mm),#bbb calc(50% - .1mm),#bbb calc(50% + .1mm),transparent calc(50% + .1mm)),linear-gradient(to bottom,transparent calc(50% - .1mm),#bbb calc(50% - .1mm),#bbb calc(50% + .1mm),transparent calc(50% + .1mm))}
+ #printRoot .pb span{opacity:var(--po,.55)}
+ #printRoot .pun{display:flex;flex-direction:column;align-items:flex-start;margin-right:.6mm}
+ #printRoot .pun b{font-weight:400;display:flex;align-items:flex-end}
+ #printRoot .psp{display:inline-block}
+}
 </style>
 </head>
 <body>
@@ -60,6 +114,7 @@ textarea{min-height:90px}
   <button role="tab" data-t="grammar" aria-selected="false">Ngữ pháp</button>
   <button role="tab" data-t="review" aria-selected="false">Ôn tập</button>
   <button role="tab" data-t="dict" aria-selected="false">Nghe chép</button>
+  <button role="tab" data-t="copy" aria-selected="false">Luyện chép</button>
   <button role="tab" data-t="data" aria-selected="false">Dữ liệu</button>
 </nav>
 <main>
@@ -124,6 +179,38 @@ textarea{min-height:90px}
   </div>
 </section>
 
+<section id="copy" hidden data-d="mid">
+  <div class="card">
+    <h2>Nội dung luyện chép</h2>
+    <textarea id="ctext" class="zh" rows="4" style="min-height:110px;font-size:1.1rem" placeholder="Nhập hoặc dán câu, đoạn văn tiếng Trung…" aria-label="Nội dung luyện chép"></textarea>
+    <div class="tb">
+      <button class="btn" id="csplit">Tách chữ và hiện nét</button>
+      <button class="btn soft" id="clisten">Nghe cả đoạn</button>
+      <button class="btn soft" id="chide" aria-pressed="false">Ẩn mặt chữ</button>
+      <label>Cỡ ô in <select id="csize"><option value="8">Nhỏ (8 mm)</option><option value="10" selected>Vừa (10 mm)</option><option value="13">Lớn (13 mm)</option></select></label>
+      <label>Chữ mẫu <select id="cdens"><option value="light">Nhạt</option><option value="mid" selected>Vừa</option><option value="dark">Đậm</option></select></label>
+      <button class="btn soft" id="cprint">In trang luyện viết</button>
+    </div>
+    <div class="tb" style="margin-top:8px">
+      <label><input type="checkbox" id="cpy" checked> Hiện pinyin</label>
+      <label>Tốc độ đọc <select id="crate"><option value=".6">Chậm</option><option value=".85" selected>Vừa</option><option value="1">Thường</option></select></label>
+      <label id="cvwrap" hidden>Giọng <select id="cvoice"></select></label>
+      <span id="spk"><button class="btn ghost" id="cpause">Tạm dừng</button><button class="btn ghost" id="cstop">Dừng</button></span>
+    </div>
+    <p id="cmsg" class="c" style="text-align:left;margin:8px 0 0"></p>
+  </div>
+  <div class="cgrid">
+    <div class="card">
+      <h2>Bài luyện chép</h2>
+      <p class="c" style="text-align:left;margin:0 0 10px">Rê chuột lên ô hoặc chạm vào chữ để xem nét.</p>
+      <div id="cbody" aria-live="polite"><p class="c" style="text-align:left">Nhập nội dung rồi bấm “Tách chữ và hiện nét”.</p></div>
+    </div>
+    <aside class="card" id="qk" aria-label="Tra nhanh">
+      <h2>Tra nhanh</h2>
+      <div id="qkb"><p class="c" style="text-align:left;margin:0">Chọn một chữ hoặc một từ trong bài.</p></div>
+    </aside>
+  </div>
+</section>
 <section id="data" hidden>
   <div class="card">
     <h2>Sao lưu dữ liệu</h2>
@@ -136,6 +223,7 @@ textarea{min-height:90px}
 </main>
 <div id="modal" class="modal" hidden><div class="sheet" role="dialog" aria-modal="true" aria-label="Chi tiết từ"><div class="bar" style="margin:0 0 6px;justify-content:flex-end"><button class="btn ghost" id="mclose">Đóng</button></div><div id="mbody"></div></div></div>
 <div id="toast" role="status"></div>
+<div id="printRoot" aria-hidden="true"></div>
 
 <script src="hsk-data.js"></script>
 <script src="hsk-vi.js"></script>
@@ -310,6 +398,237 @@ $('#glist').onclick=e=>{const b=e.target.closest('button');if(b&&b.dataset.s)spe
 $('#glist').onchange=e=>{const k=e.target.dataset.g;if(k){S.g=S.g||{};if(e.target.checked)S.g[k]=1;else delete S.g[k];save();ginfo()}};
 
 vlist();
+</script>
+<script>
+/* Luyện chép: dùng lại kho HSK (HSK, HSK_VI) và Hanzi Writer đã có */
+(()=>{
+const CK='hanziai.copy.v1',HAN=/\p{Script=Han}/u;
+const sec=$('#copy');
+let cfg={text:'我喜欢学中文，也喜欢写汉字。',size:10,dens:'mid',py:true,hide:false,rate:.85,voice:''};
+try{Object.assign(cfg,JSON.parse(localStorage.getItem(CK)||'{}'))}catch(e){}
+const store=()=>{try{localStorage.setItem(CK,JSON.stringify(cfg))}catch(e){}};
+const msg=t=>{$('#cmsg').textContent=t||''};
+
+/* ---- Chỉ mục từ kho HSK (không tạo kho mới) ---- */
+let WI=null,CP=null;
+const syl=p=>String(p).split(' / ')[0].trim().toLowerCase().split(/\s+/).filter(Boolean);
+function build(){
+  if(WI)return;WI=new Map();CP=new Map();const cnt={};
+  const H=window.HSK||{};
+  Object.keys(H).sort().forEach(lv=>H[lv].forEach(r=>{
+    if(!WI.has(r[0]))WI.set(r[0],{r,lv});
+    const sy=syl(r[1]),cs=[...r[0]];
+    if(sy.length===cs.length)cs.forEach((c,i)=>{if(HAN.test(c)){const k=c+'|'+sy[i];cnt[k]=(cnt[k]||0)+(cs.length===1?100:1)}});
+  }));
+  const best={};
+  for(const k in cnt){const [c,p]=k.split('|');if(!best[c]||cnt[k]>best[c][1])best[c]=[p,cnt[k]]}
+  for(const c in best)CP.set(c,best[c][0]);
+}
+
+/* ---- Tách chữ ---- */
+let toks=[],segs=[];
+function segRun(run){
+  const n=run.length;let p=0;
+  while(p<n){
+    let L=Math.min(8,n-p),hit=null;
+    for(;L>=1;L--){const w=run.slice(p,p+L).join('');if(WI.has(w)){hit=WI.get(w);break}}
+    let w,py=[];
+    if(hit){
+      w=run.slice(p,p+L).join('');const sy=syl(hit.r[1]);
+      py=sy.length===L?sy:[...w].map((c,i)=>L===1?sy[0]:(CP.get(c)||''));
+    }else{L=1;w=run[p];py=[CP.get(w)||'']}
+    const id=segs.length;segs.push({w,lv:hit?hit.lv:null,r:hit?hit.r:null});
+    for(let i=0;i<L;i++)toks.push({t:'h',ch:run[p+i],py:py[i]||'',seg:id,i:toks.length});
+    p+=L;
+  }
+}
+function tokenize(text){
+  build();toks=[];segs=[];const cs=[...text.replace(/\r\n?/g,'\n')];let i=0;
+  while(i<cs.length){
+    const c=cs[i];
+    if(c==='\n'){toks.push({t:'nl'});i++;continue}
+    if(HAN.test(c)){let j=i;while(j<cs.length&&HAN.test(cs[j]))j++;segRun(cs.slice(i,j));i=j;continue}
+    if(/\s/.test(c)){if(!toks.length||toks[toks.length-1].t!=='sp')toks.push({t:'sp'});i++;continue}
+    toks.push({t:'p',s:c});i++;
+  }
+}
+/* gom mỗi chữ với dấu câu theo sau để dấu câu không bị xuống dòng một mình */
+function lines(){
+  const out=[[]];
+  toks.forEach(k=>{
+    if(k.t==='nl'){out.push([]);return}
+    const ln=out[out.length-1],g=ln[ln.length-1];
+    if(k.t==='p'&&g&&g.some(x=>x.t==='h')&&!g.sp)g.push(k);else if(k.t==='sp'){ln.push([k]);ln[ln.length-1].sp=1}else ln.push([k]);
+  });
+  return out;
+}
+
+/* ---- Hiển thị bài luyện chép ---- */
+function applyOpts(){
+  sec.style.setProperty('--mm',cfg.size);sec.dataset.d=cfg.dens;
+  sec.classList.toggle('nopy',!cfg.py);sec.classList.toggle('hid',!!cfg.hide);
+  $('#chide').textContent=cfg.hide?'Hiện mặt chữ':'Ẩn mặt chữ';$('#chide').setAttribute('aria-pressed',!!cfg.hide);
+  $('#csize').value=String(cfg.size);$('#cdens').value=cfg.dens;$('#cpy').checked=!!cfg.py;$('#crate').value=String(cfg.rate);
+}
+function render(){
+  const hasHan=toks.some(k=>k.t==='h');
+  if(!toks.length){$('#cbody').innerHTML='<p class="c" style="text-align:left">Chưa có nội dung. Hãy nhập hoặc dán câu tiếng Trung ở khung trên.</p>';return}
+  $('#cbody').innerHTML=lines().map(ln=>'<div class="ln">'+ln.map(g=>{
+    if(g[0].t==='sp')return'<span class="spc"></span>';
+    return'<span class="gr">'+g.map(k=>k.t==='h'
+      ?`<span class="cc"><span class="py">${esc(k.py)}</span><button class="bx" data-i="${k.i}" aria-label="${esc(k.ch)} ${esc(k.py)}"><span class="g">${esc(k.ch)}</span></button></span>`
+      :`<span class="pu"><i></i><b class="zh">${esc(k.s)}</b></span>`).join('')+'</span>';
+  }).join('')+'</div>').join('');
+  sel=-1;
+  if(!hasHan)msg('Nội dung chưa có chữ Hán nào để luyện chép.');else msg('');
+}
+let sel=-1;
+function split(){
+  cfg.text=$('#ctext').value;store();tokenize(cfg.text);render();
+  $('#qkb').innerHTML='<p class="c" style="text-align:left;margin:0">Chọn một chữ hoặc một từ trong bài.</p>';
+}
+
+/* ---- Dữ liệu nét: Hanzi Writer ---- */
+const CD=new Map();
+function charData(ch){
+  if(CD.has(ch))return CD.get(ch);
+  let p;
+  if(window.HanziWriter&&HanziWriter.loadCharacterData)p=Promise.resolve(HanziWriter.loadCharacterData(ch));
+  else p=fetch('https://cdn.jsdelivr.net/npm/hanzi-writer-data@2.0/'+encodeURIComponent(ch)+'.json').then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+  p=p.then(d=>{if(!d||!d.strokes||!d.strokes.length)throw new Error('empty');return d});
+  p.catch(()=>CD.delete(ch));
+  CD.set(ch,p);return p;
+}
+function stepSvg(d,k){
+  const s=d.strokes.slice(0,k).map((p,i)=>`<path d="${p}" fill="${i===k-1?'#c8392b':'currentColor'}"/>`).join('');
+  return`<svg viewBox="0 0 1024 1024" aria-hidden="true" style="color:var(--mute)"><g transform="scale(1,-1) translate(0,-900)">${s}</g></svg>`;
+}
+
+/* ---- Tra nhanh ---- */
+let writer=null,selTok=0;
+function select(i,fromClick){
+  const k=toks[i];if(!k||k.t!=='h'||sel===i)return;
+  sel=i;const my=++selTok,seg=segs[k.seg];
+  document.querySelectorAll('#cbody .bx.on,#cbody .bx.wd').forEach(b=>b.classList.remove('on','wd'));
+  document.querySelectorAll('#cbody .bx').forEach(b=>{const t=toks[+b.dataset.i];if(t.seg===k.seg)b.classList.add('wd');if(+b.dataset.i===i)b.classList.add('on')});
+  const vi=window.HSK_VI||{},cv=vi[k.ch],wv=seg.w.length>1?vi[seg.w]:null;
+  const lv=(seg.r&&seg.lv)?seg.lv:(()=>{const f=WI.get(k.ch);return f?f.lv:null})();
+  let h=`<div class="qh"><div class="box" id="qw"></div><div><div class="qpy">${esc(k.py||'—')}</div><div class="zh" style="font-size:1.6rem;line-height:1.2">${esc(k.ch)}</div><div class="bar" style="margin-top:4px">${lv?`<span class="tag">HSK ${esc(lv)}</span>`:'<span class="tag">Ngoài kho HSK</span>'}<span class="tag" id="qn">… nét</span></div></div></div>`;
+  h+=`<div class="bar"><button class="btn soft" id="qsp">🔊 Nghe chữ</button><button class="btn soft" id="qre">▶ Phát lại</button>${seg.w.length>1?'<button class="btn soft" id="qsw">🔊 Nghe từ</button>':''}</div>`;
+  h+=`<p class="qm"><small>Nghĩa chữ:</small> ${cv?esc(cv):'<span class="c">chưa có nghĩa riêng cho chữ đơn trong kho HSK</span>'}</p>`;
+  if(seg.w.length>1){
+    h+=`<p class="qm"><small>Từ chứa chữ này:</small> <b class="zh">${esc(seg.w)}</b> · ${esc(seg.r?syl(seg.r[1]).join(' '):'')}${wv?' — '+esc(wv):(seg.r?'':' <span class="c">(không có trong kho HSK)</span>')}</p>`;
+  }else if(!cv&&!seg.r){h+='<p class="qm c" style="text-align:left">Chữ này chưa có trong kho từ vựng HSK nên chưa có nghĩa; vẫn dùng để luyện chép bình thường.</p>'}
+  h+='<p class="qs" style="margin:10px 0 0"><small>Thứ tự nét:</small></p><div class="steps" id="qst"><span class="c">Đang tải dữ liệu nét…</span></div>';
+  if(matchMedia('(max-width:820px)').matches)h+='<div class="bar"><button class="btn ghost" id="qup">↑ Về bài luyện chép</button></div>';
+  $('#qkb').innerHTML=h;writer=null;
+  $('#qsp').onclick=()=>speak(k.ch);
+  if($('#qsw'))$('#qsw').onclick=()=>speak(seg.w);
+  if($('#qup'))$('#qup').onclick=()=>$('#cbody').scrollIntoView({behavior:'smooth',block:'start'});
+  if(fromClick&&matchMedia('(max-width:820px)').matches){const r=$('#qk').getBoundingClientRect();if(r.top>innerHeight*.8||r.bottom<0)$('#qk').scrollIntoView({behavior:'smooth',block:'nearest'})}
+  charData(k.ch).then(d=>{
+    if(my!==selTok)return;
+    $('#qn').textContent=d.strokes.length+' nét';
+    $('#qst').innerHTML=d.strokes.map((_,j)=>`<div class="n">${stepSvg(d,j+1)}${j+1}</div>`).join('');
+    if(window.HanziWriter){
+      const cs=getComputedStyle(document.documentElement);
+      writer=HanziWriter.create($('#qw'),k.ch,{width:120,height:120,padding:6,strokeColor:cs.getPropertyValue('--ink').trim(),outlineColor:cs.getPropertyValue('--line').trim(),radicalColor:'#c8392b',strokeAnimationSpeed:1.2,delayBetweenStrokes:150,charDataLoader:(c,ok)=>ok(d)});
+      writer.animateCharacter();
+    }else $('#qw').innerHTML='<span class="zh" style="font-size:3rem">'+esc(k.ch)+'</span>';
+  }).catch(()=>{
+    if(my!==selTok)return;
+    $('#qn').textContent='chưa rõ số nét';
+    $('#qst').innerHTML='<span class="no">Không có dữ liệu thứ tự nét cho chữ này, hoặc chưa tải được (cần có mạng). Hanzi AI không tự đoán thứ tự nét.</span>';
+    $('#qw').innerHTML='<span class="zh" style="font-size:3rem">'+esc(k.ch)+'</span>';
+  });
+}
+$('#qkb').onclick=e=>{if(e.target.closest('#qre')&&writer)writer.animateCharacter()};
+const body=$('#cbody');
+body.addEventListener('click',e=>{const b=e.target.closest('.bx');if(b)select(+b.dataset.i,true)});
+body.addEventListener('mouseover',e=>{const b=e.target.closest('.bx');if(b)select(+b.dataset.i,false)});
+
+/* ---- Nghe cả đoạn ---- */
+let gen=0,paused=false;
+const hasTTS='speechSynthesis' in window;
+function voices(){return hasTTS?speechSynthesis.getVoices().filter(v=>/^zh/i.test(v.lang)):[]}
+function fillVoices(){
+  const vs=voices().sort((a,b)=>(/zh[-_]cn/i.test(b.lang)-/zh[-_]cn/i.test(a.lang)));
+  $('#cvwrap').hidden=vs.length<2;
+  $('#cvoice').innerHTML=vs.map(v=>`<option value="${esc(v.name)}">${esc(v.name)} (${esc(v.lang)})</option>`).join('');
+  if(cfg.voice&&vs.some(v=>v.name===cfg.voice))$('#cvoice').value=cfg.voice;
+}
+if(hasTTS){speechSynthesis.getVoices();speechSynthesis.addEventListener&&speechSynthesis.addEventListener('voiceschanged',fillVoices)}
+function chunks(t){
+  const out=[];t.split(/(?<=[。！？!?；;\n])/).forEach(s=>{
+    s=s.trim();if(!s)return;
+    while(s.length>70){let c=s.slice(0,70),m=Math.max(c.lastIndexOf('，'),c.lastIndexOf(','),c.lastIndexOf('、'));if(m<20)m=69;out.push(s.slice(0,m+1));s=s.slice(m+1)}
+    if(s)out.push(s)});
+  return out.filter(s=>HAN.test(s));
+}
+function stopSpeak(){gen++;paused=false;if(hasTTS)speechSynthesis.cancel();$('#spk').classList.remove('on');$('#cpause').textContent='Tạm dừng'}
+function listen(){
+  if(!hasTTS){toast('Trình duyệt không hỗ trợ đọc thành tiếng.');return}
+  const q=chunks($('#ctext').value);
+  if(!q.length){toast('Chưa có chữ Hán để đọc.');return}
+  stopSpeak();const my=gen;
+  const vs=voices();
+  const v=vs.find(x=>x.name===$('#cvoice').value)||vs.find(x=>/zh[-_]cn/i.test(x.lang))||vs[0];
+  if(!v)toast('Máy chưa có giọng tiếng Trung. Hãy cài thêm trong cài đặt hệ thống.');
+  $('#spk').classList.add('on');
+  let i=0;
+  const next=()=>{
+    if(my!==gen)return;
+    if(i>=q.length){$('#spk').classList.remove('on');return}
+    const u=new SpeechSynthesisUtterance(q[i++]);u.lang=v?v.lang:'zh-CN';if(v)u.voice=v;u.rate=cfg.rate;
+    u.onend=next;u.onerror=ev=>{if(ev.error!=='canceled'&&ev.error!=='interrupted')next()};
+    speechSynthesis.speak(u);
+  };
+  setTimeout(next,60);
+}
+$('#clisten').onclick=listen;
+$('#cstop').onclick=stopSpeak;
+$('#cpause').onclick=()=>{if(!hasTTS)return;if(paused){speechSynthesis.resume();paused=false;$('#cpause').textContent='Tạm dừng'}else{speechSynthesis.pause();paused=true;$('#cpause').textContent='Tiếp tục'}};
+
+/* ---- In A4 ---- */
+function printSheet(){
+  if(!toks.some(k=>k.t==='h')){toast('Hãy nhập chữ Hán và bấm “Tách chữ và hiện nét” trước khi in.');return}
+  const mm=cfg.size,W=186,po={light:.22,mid:.55,dark:1}[cfg.dens],cw=mm+.6,pw=Math.max(3.5,mm*.45),sw=mm*.5;
+  const gw=g=>g.reduce((a,k)=>a+(k.t==='h'?cw:k.t==='p'?pw:sw),0);
+  const rows=[];
+  lines().forEach(ln=>{
+    let row=[],used=0;
+    ln.forEach(g=>{const w=gw(g);if(used+w>W&&row.length){rows.push(row);row=[];used=0}if(g[0].t==='sp'&&!row.length)return;row.push(g);used+=w});
+    rows.push(row);
+  });
+  const cell=k=>k.t==='h'
+    ?`<div class="pc">${cfg.py?`<div class="pp">${esc(k.py)}</div>`:''}<div class="pb" style="width:${mm}mm;height:${mm}mm;font-size:${(mm*.74).toFixed(1)}mm"><span${cfg.hide?' style="visibility:hidden"':''}>${esc(k.ch)}</span></div></div>`
+    :k.t==='p'?`<div class="pun" style="width:${pw}mm">${cfg.py?'<div class="pp"></div>':''}<b class="zh" style="height:${mm}mm;font-size:${(mm*.5).toFixed(1)}mm">${esc(k.s)}</b></div>`
+    :`<span class="psp" style="width:${sw}mm"></span>`;
+  $('#printRoot').style.setProperty('--po',po);
+  $('#printRoot').innerHTML=rows.map(r=>`<div class="pr" ${r.length?'':`style="height:${mm*.6}mm"`}>${r.map(g=>g.map(cell).join('')).join('')}</div>`).join('');
+  const clear=()=>{$('#printRoot').innerHTML='';removeEventListener('afterprint',clear)};
+  addEventListener('afterprint',clear);
+  setTimeout(()=>print(),50);
+}
+$('#cprint').onclick=printSheet;
+
+/* ---- Điều khiển ---- */
+$('#csplit').onclick=split;
+$('#chide').onclick=()=>{cfg.hide=!cfg.hide;store();applyOpts()};
+$('#csize').onchange=e=>{cfg.size=+e.target.value;store();applyOpts()};
+$('#cdens').onchange=e=>{cfg.dens=e.target.value;store();applyOpts()};
+$('#cpy').onchange=e=>{cfg.py=e.target.checked;store();applyOpts()};
+$('#crate').onchange=e=>{cfg.rate=+e.target.value;store()};
+$('#cvoice').onchange=e=>{cfg.voice=e.target.value;store()};
+$('#ctext').value=cfg.text;applyOpts();
+let first=true;
+document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>{
+  document.body.classList.toggle('wide',b.dataset.t==='copy');
+  if(b.dataset.t==='copy'){fillVoices();if(first){first=false;if(cfg.text.trim())split()}}
+  else stopSpeak();
+}));
+addEventListener('pagehide',stopSpeak);
+})();
 </script>
 </body>
 </html>
