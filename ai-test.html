@@ -14,14 +14,18 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{border-top:1px s
 .pass{color:var(--accent);font-weight:700}.wrong{color:var(--seal);font-weight:700}.uns{color:var(--warn);font-weight:700}
 .tbl{overflow-x:auto}small{color:var(--mute)}
 </style></head><body>
-<h1>Kiểm thử nhận xét AI – dịch câu HSK 1 (phiên bản 3)</h1>
-<div class="mute">Trang này gọi Ollama thật trên máy bạn. Cần chạy từ đúng địa chỉ GitHub Pages của Hanzi AI (để Ollama chấp nhận nguồn). Nhãn "đúng/sai" do Claude soạn, chưa được người bản ngữ xác nhận. Kết quả cuối có 3 trạng thái: Phù hợp / Cần xem lại / Chưa chắc. Để so sánh hai định dạng: chạy một lần với "JSON Schema", rồi một lần với "JSON thường".</div>
+<h1>Kiểm thử nhận xét AI – dịch câu HSK 1 (phiên bản 4)</h1>
+<div class="mute" id="build"></div>
+<div class="mute">Trang này gọi Ollama thật trên máy bạn. Cần chạy từ đúng địa chỉ GitHub Pages của Hanzi AI (để Ollama chấp nhận nguồn). Nhãn "đúng/sai" do Claude soạn, chưa được người bản ngữ xác nhận. Kết quả cuối có 3 trạng thái: Phù hợp / Cần xem lại / Chưa chắc. Để so sánh: chạy từng tổ hợp (định dạng × chế độ suy nghĩ), mỗi tổ hợp một lần; kết quả các lần chạy được giữ lại trong trang cho tới khi tải lại và hiện chung trong bảng so sánh. Chế độ A: tắt suy nghĩ (think:false), tối đa 500 token. Chế độ B: bật suy nghĩ (think:true), tối đa 1024 token. Chế độ B có thể rất chậm (hàng chục giây mỗi câu) trên máy RAM 8GB: hãy theo dõi bằng lệnh <code>ollama ps</code> trong Terminal. <b>Mỗi lần bấm chạy là một lượt mới và được giữ lại</b> (không ghi đè lượt trước); đừng tải lại trang trước khi tải file kết quả.</div>
 <div class="card">
  <div class="row"><label>Địa chỉ Ollama <input id="url" size="26"></label><label>Model <input id="model" size="16"></label>
  <label>Chờ tối đa <select id="to"><option>60</option><option selected>120</option><option>180</option></select> giây/câu</label>
- <label>Định dạng trả lời <select id="fmt"><option value="schema">JSON Schema</option><option value="json">JSON thường</option></select></label></div>
+ <label>Định dạng trả lời <select id="fmt"><option value="schema">JSON Schema</option><option value="json">JSON thường</option></select></label>
+ <label>Chế độ suy nghĩ <select id="tm"><option value="A">A – tắt suy nghĩ (think:false, 500 token)</option><option value="B">B – bật suy nghĩ (think:true, 1024 token)</option></select></label></div>
  <div class="row"><label><input type="checkbox" id="skip"> Bỏ qua AI khi bài khớp đúng đáp án/đáp án phụ trong dữ liệu (giống app thật). Mặc định tắt: gửi tất cả ca cho AI để thử độ chắc của model.</label></div>
  <div class="row"><button id="ping" class="g">Kiểm tra kết nối</button><button id="run">Chạy cả các ca</button><button id="stop" class="g" disabled>Dừng</button><button id="dl" class="g" disabled>Tải kết quả (JSON)</button><span id="st" class="mute"></span></div>
+ <div class="row"><label>Xem lượt chạy <select id="hist" disabled><option>chưa có lượt nào</option></select></label></div>
+ <div id="combos" class="mute"></div>
 </div>
 <div class="card" id="sum" hidden></div>
 <div class="card" id="cmp" hidden></div>
@@ -30,15 +34,24 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{border-top:1px s
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const C=HSK_AI.load();$('#url').value=C.url;$('#model').value=C.model;$('#to').value=String(C.timeout);$('#fmt').value=C.fmt==='json'?'json':'schema';
-const cfg=()=>({url:$('#url').value,model:$('#model').value,timeout:+$('#to').value,fmt:$('#fmt').value});
+const TM={A:{label:'A: tắt suy nghĩ, 500 token',think:'off',predict:500},B:{label:'B: bật suy nghĩ, 1024 token',think:'on',predict:1024}};
+const cfg=()=>({url:$('#url').value,model:$('#model').value,timeout:+$('#to').value,fmt:$('#fmt').value,think:TM[$('#tm').value].think,predict:TM[$('#tm').value].predict});
+const keyOf=()=>$('#fmt').value+'|'+$('#tm').value,labelOf=k=>{const [f,m]=k.split('|');return FM[f]+' · '+TM[m].label},runLabel=r=>'#'+r.id+' · '+labelOf(r.key)+(r.stopped?' (dừng ở '+Object.keys(r.R).length+'/'+N+')':''),COMBOS=['schema|A','json|A','schema|B','json|B'];
+$('#tm').onchange=()=>{if($('#tm').value==='B'&&+$('#to').value<180)$('#to').value='180'};
 const items=Object.fromEntries(HSK_T.sentences.map(s=>[s.id,s]));
 const N=HSK_AI_TESTS.length,ST=HSK_AI.STATUS_VI,TV=HSK_AI.TYPE_VI,VD={correct:'correct (đúng)',has_error:'has_error (có lỗi)',unsure:'unsure (không chắc)'};
 const FM={schema:'JSON Schema',json:'JSON thường'};
 const EXP={ok:'Đúng',soft:'Mơ hồ (không được báo sai chắc chắn)',bad:'Có lỗi'};
 /* Kết quả lần chạy trước (bản 2, JSON Schema, chưa có quote) do chủ dự án chạy ngày 26/11/2026, để so sánh trước/sau. */
 const BASE={ok:{fit:18,unsure:2,review:2},soft:{pass:2,wrong:2},bad:{review:19,unsure:6,fit:1},typeHit:9};
-let RUNS={},cur=null,stop=false,ctl=null;
-const R=()=>cur?RUNS[cur].R:{};
+const BUILD='ai-test bản 4.2 · chế độ A/B × JSON Schema/JSON thường · mỗi lượt chạy được giữ riêng · ghi lại payload gửi thật';
+$('#build').textContent=BUILD;
+let RUNS=[],cur=null,stop=false,ctl=null,nextId=1,dirty=false,SENT=[];
+/* Ghi lại payload THẬT mà trình duyệt gửi tới Ollama (bọc fetch; không đổi nội dung yêu cầu). */
+(()=>{const f=window.fetch;window.fetch=function(u,o){try{if(/\/api\/chat$/.test(String(u))&&o&&typeof o.body==='string'){const b=JSON.parse(o.body);SENT.push({url:String(u),model:b.model,format:typeof b.format==='object'&&b.format?'json_schema':b.format,think:'think' in b?b.think:'(không gửi)',num_predict:b.options&&b.options.num_predict,num_ctx:b.options&&b.options.num_ctx,temperature:b.options&&b.options.temperature,stream:b.stream,keep_alive:b.keep_alive,messages:(b.messages||[]).length})}}catch(e){}return f.apply(this,arguments)}})();
+const R=()=>cur?cur.R:{};
+const sentStr=a=>a&&a.length?'think='+a[0].think+' · np='+a[0].num_predict+' · '+a[0].format+(a.length>1?' · '+a.length+' lần gọi':''):'';
+const tokStr=m=>m?'p'+m.promptTokens+' · e'+m.evalTokens+(m.thinkTokensEst?' (≈'+m.thinkTokensEst+' nghĩ)':'')+(m.doneReason==='length'?' · <b class="wrong">HẾT TOKEN</b>':'')+(m.thinkDropped?' · bỏ think':''):'';
 $('#run').textContent='Chạy cả '+N+' ca';
 $('#tb').innerHTML=HSK_AI_TESTS.map(t=>'<tr id="r-'+t.id+'"><td>'+t.id+'<br><small>'+t.item+'</small></td><td class="zh">'+esc(t.ans)+'<br><small>'+esc(t.note)+'</small></td><td>'+EXP[t.exp]+'</td><td colspan="6" class="mute">chưa chạy</td></tr>').join('');
 const exactData=t=>{const it=items[t.item],n=HSK_AI.hn(t.ans);return [it.zh].concat((it.alt||[]).map(a=>a.zh)).some(z=>HSK_AI.hn(z)===n)};
@@ -60,7 +73,7 @@ function row(t,r,j,sec){
  const x=r.result;
  tr.innerHTML=base+'<td><b>'+ST[x.status]+'</b>'+(x.reasons.length?'<br><small>'+x.reasons.map(esc).join(' ')+'</small>':'')+'</td>'+
  '<td>'+esc(VD[x.verdict])+'<br><small>tự tin: '+x.confidence+' (không dùng để quyết định)'+(x.schema==='json'?' · đang ở chế độ json':'')+(r.attempts>1?' · thử lại '+(r.attempts-1)+' lần':'')+'</small><br><small>'+(x.summary?esc(x.summary):'<i>summary bị ẩn'+(x.summaryHidden?' (mâu thuẫn với verdict)':'')+'</i>')+'</small>'+(x.notes?'<br><small>ghi chú: '+esc(x.notes)+'</small>':'')+(x.langWarn.length?'<br><small class="uns">lẫn ngôn ngữ: '+x.langWarn.join(', ')+'</small>':'')+'</td>'+
- '<td>'+(x.issues.map(i=>'<b>'+i.type+'</b>'+(i.relabeled?' <small>(AI gọi: '+i.relabeled+')</small>':'')+(i.quote?' <span class="zh">「'+esc(i.quote)+'」</span>':'')+': '+esc(i.detail)).join('<br>')||'—')+(x.dropped.length?'<br><small class="uns">Bị ẩn ('+x.dropped.length+'): '+x.dropped.map(d=>d.type+(d.quote?' 「'+esc(d.quote)+'」':'')+' – '+esc(d.detail)+' ['+d.why+']').join('; ')+'</small>':'')+'</td>'+
+ '<td>'+(x.issues.map(i=>'<b>'+i.type+'</b>'+(i.relabeled?' <small>(AI gọi: '+i.relabeled+')</small>':'')+(i.quote?(i.hl?' <span class="zh">「'+esc(i.quote)+'」</span>':' <small class="mute">(trích dài: '+esc(i.quote)+')</small>'):'')+': '+esc(i.detail)).join('<br>')||'—')+(x.dropped.length?'<br><small class="uns">Bị ẩn ('+x.dropped.length+'): '+x.dropped.map(d=>d.type+(d.quote?' 「'+esc(d.quote)+'」':'')+' – '+esc(d.detail)+' ['+d.why+']').join('; ')+'</small>':'')+'</td>'+
  '<td>'+(x.hints.map(h=>'<small class="'+(h.soft?'mute':'pass')+'">'+h.id+(h.soft?' (nhẹ)':'')+': '+esc(h.detail)+'</small>').join('<br>')||'—')+'</td>'+
  '<td class="'+j.k+'">'+esc(j.label)+'</td><td>'+sec+'</td>';
 }
@@ -74,59 +87,107 @@ function metrics(Rr){
  return {n:rows.length,ok:{n:ok.length,fit:st(ok,'fit'),unsure:st(ok,'unsure'),review:st(ok,'review')},soft:{n:soft.length,pass:jk(soft,'pass'),wrong:jk(soft,'wrong')},bad:{n:bad.length,review:st(bad,'review'),unsure:st(bad,'unsure'),fit:st(bad,'fit')},
   typeHit:bad.filter(t=>Rr[t.id].r.ok&&Rr[t.id].j.typeHit).length,
   errs:errs.length,fmt:errs.filter(t=>Rr[t.id].r.error.code==='format').length,tmo:errs.filter(t=>Rr[t.id].r.error.code==='timeout').length,
-  cut:why('lời giải thích bị cụt'),noQuote:why('thiếu đoạn trích')+why('đoạn trích không có'),inRef:why('đoạn trích đã có'),langDrop:why('lẫn ngôn ngữ'),
-  sumHidden:okR.filter(t=>res(t).summaryHidden).length,fallback:okR.filter(t=>res(t).schema==='json'&&Rr[t.id].mode==='schema').length,
+  cut:why('lời giải thích'),longQuote:okR.reduce((n,t)=>n+res(t).issues.filter(i=>i.quote&&!i.hl).length,0),extraOnly:okR.filter(t=>res(t).issues.length&&res(t).issues.every(i=>i.type==='extra_content')).length,noQuote:why('thiếu đoạn trích')+why('đoạn trích không có'),inRef:why('đoạn trích đã có'),langDrop:why('lẫn ngôn ngữ'),
+  sumHidden:okR.filter(t=>res(t).summaryHidden).length,fallback:okR.filter(t=>res(t).schema==='json'&&String(Rr[t.id].mode).indexOf('schema')===0).length,
   hintOk:ok.concat(soft).filter(t=>Rr[t.id].r.ok&&!Rr[t.id].r.skipped&&res(t).hints.length).length,
   unknownType:okR.reduce((n,t)=>n+res(t).issues.filter(i=>i.type==='unknown').length,0),relabeled:okR.reduce((n,t)=>n+res(t).issues.filter(i=>i.relabeled).length,0),
-  avg:secs.length?(secs.reduce((a,b)=>a+b,0)/secs.length).toFixed(1):'–'};
+  avg:secs.length?(secs.reduce((a,b)=>a+b,0)/secs.length).toFixed(1):'–',
+  ...(()=>{
+   const called=rows.filter(t=>!Rr[t.id].r.skipped),bad2=errs.filter(t=>['format','think'].includes(Rr[t.id].r.error.code)).length,thinkErr=errs.filter(t=>Rr[t.id].r.error.code==='think').length;
+   const sorted=secs.slice().sort((a,b)=>a-b),med=sorted.length?sorted[Math.floor(sorted.length/2)]:null;
+   const metas=rows.map(t=>Rr[t.id].r.meta||(Rr[t.id].r.error&&Rr[t.id].r.error.meta)).filter(Boolean);
+   const av=f=>metas.length?Math.round(metas.reduce((a,m)=>a+f(m),0)/metas.length):null;
+   const passStrict=ok.filter(t=>Rr[t.id].j.k==='pass').length+soft.filter(t=>Rr[t.id].j.k==='pass').length+bad.filter(t=>Rr[t.id].j.k==='pass').length;
+   return {called:called.length,thinkErr,validJson:called.length-bad2,
+    accStrict:passStrict,accLenient:passStrict+ok.filter(t=>Rr[t.id].j.k==='uns').length+bad.filter(t=>Rr[t.id].j.k==='uns').length,
+    explained:bad.filter(t=>Rr[t.id].r.ok&&!Rr[t.id].r.skipped&&res(t).status!=='fit'&&res(t).issues.length>0).length,
+    med:med==null?'–':med.toFixed(1),max:secs.length?Math.max(...secs).toFixed(1):'–',over60:secs.filter(x=>x>60).length,
+    avgEval:av(m=>m.evalTokens),avgThink:av(m=>m.thinkTokensEst),maxPrompt:metas.length?Math.max(...metas.map(m=>m.promptTokens)):null,lenHits:metas.filter(m=>m.doneReason==='length').length,loadMax:metas.length?Math.max(...metas.map(m=>m.loadMs)):null,metaN:metas.length}})()};
 }
 function summary(){
  if(!cur)return;const m=metrics(R());if(!m.n)return;
- $('#sum').hidden=false;$('#sum').innerHTML='<b>Tổng hợp – '+FM[cur]+' ('+m.n+'/'+N+' ca đã chạy)</b><ul>'+
- '<li>Câu ĐÚNG ('+m.ok.n+'): phù hợp '+m.ok.fit+', chưa chắc '+m.ok.unsure+', <span class="wrong">báo động giả mạnh '+m.ok.review+'</span> <small>(bản 2: 18 / 2 / 2)</small></li>'+
- '<li>Câu MƠ HỒ ('+m.soft.n+'): đạt '+m.soft.pass+', <span class="wrong">kết luận sai chắc chắn '+m.soft.wrong+'</span> <small>(bản 2: 2 / 2)</small></li>'+
- '<li>Câu CÓ LỖI ('+m.bad.n+'): cần xem lại '+m.bad.review+', chưa chắc '+m.bad.unsure+', <span class="wrong">bỏ sót (Phù hợp) '+m.bad.fit+'</span> <small>(bản 2: 19 / 6 / 1)</small></li>'+
- '<li>Gọi đúng loại lỗi: '+m.typeHit+'/'+m.bad.n+' ca có lỗi (chỉ số phụ; bản 2: 9, theo nhãn K16, K18, K30 = meaning, K21 = grammar)</li>'+
- '<li>Lỗi bị ẩn: lời giải thích bị cụt '+m.cut+' · thiếu hoặc sai đoạn trích '+m.noQuote+' · đoạn trích có trong bản tham khảo '+m.inRef+' · lẫn ngôn ngữ '+m.langDrop+' · loại lỗi "chưa rõ" '+m.unknownType+' · nhãn bị chỉnh '+m.relabeled+' · summary bị ẩn '+m.sumHidden+'</li>'+
+ $('#sum').hidden=false;$('#sum').innerHTML='<b>Tổng hợp – '+esc(runLabel(cur))+' ('+m.n+'/'+N+' ca đã chạy)</b><ul>'+
+ '<li>Payload gửi thật (ca đầu tiên): '+esc(sentStr(firstSent(cur))||'–')+' · num_ctx '+esc(String((firstSent(cur)||[{}])[0].num_ctx))+' · temperature '+esc(String((firstSent(cur)||[{}])[0].temperature))+'</li>'+
+ '<li>JSON hợp lệ: <b>'+m.validJson+'/'+m.called+'</b> · trả lời rỗng vì hết token suy nghĩ: '+m.thinkErr+' · đạt đúng kỳ vọng (chặt): <b>'+m.accStrict+'/'+m.n+'</b> · tính cả "Chưa chắc" an toàn: '+m.accLenient+'/'+m.n+' · ca có lỗi được nêu kèm giải thích hiển thị: '+m.explained+'/'+m.bad.n+'</li>'+
+ '<li>Câu ĐÚNG ('+m.ok.n+'): phù hợp '+m.ok.fit+', chưa chắc '+m.ok.unsure+', <span class="wrong">báo động giả mạnh '+m.ok.review+'</span> <small>(bản 3: 18 / 3 / 1)</small></li>'+
+ '<li>Câu MƠ HỒ ('+m.soft.n+'): đạt '+m.soft.pass+', <span class="wrong">kết luận sai chắc chắn '+m.soft.wrong+'</span> <small>(bản 3: 3 / 1)</small></li>'+
+ '<li>Câu CÓ LỖI ('+m.bad.n+'): cần xem lại '+m.bad.review+', chưa chắc '+m.bad.unsure+', <span class="wrong">bỏ sót (Phù hợp) '+m.bad.fit+'</span> <small>(bản 3: 12 / 14 / 0)</small></li>'+
+ '<li>Gọi đúng loại lỗi: '+m.typeHit+'/'+m.bad.n+' ca có lỗi (chỉ số phụ; bản 3: 8, theo nhãn K16, K18, K30 = meaning, K21 = grammar)</li>'+
+ '<li>Lỗi bị ẩn: lời giải thích không dùng được (cụt, thiếu, chữ Hán, không khớp đề) '+m.cut+' · trích dài chỉ làm bằng chứng (không ẩn) '+m.longQuote+' · ca chỉ có extra_content '+m.extraOnly+' · thiếu hoặc sai đoạn trích '+m.noQuote+' · đoạn trích có trong bản tham khảo '+m.inRef+' · lẫn ngôn ngữ '+m.langDrop+' · loại lỗi "chưa rõ" '+m.unknownType+' · nhãn bị chỉnh '+m.relabeled+' · summary bị ẩn '+m.sumHidden+'</li>'+
  '<li>Quy tắc bằng mã có gợi ý trên câu đúng/mơ hồ: '+m.hintOk+' ca · Lỗi định dạng JSON: '+m.fmt+' · Quá thời gian: '+m.tmo+' · Lỗi khác: '+(m.errs-m.fmt-m.tmo)+'</li>'+
- '<li>Thời gian trung bình: '+m.avg+' giây/câu</li></ul><small>Model: '+esc($('#model').value)+' · định dạng: '+FM[cur]+'</small>';
+ '<li>Thời gian: trung bình '+m.avg+' · trung vị '+m.med+' · lâu nhất '+m.max+' giây/câu · số ca >60 giây: '+m.over60+'</li>'+
+ (m.metaN?'<li>Token (Ollama báo): prompt lớn nhất '+m.maxPrompt+' (num_ctx 3072) · trả lời trung bình '+m.avgEval+' · suy nghĩ trung bình ≈'+m.avgThink+' (ước lượng theo tỉ lệ ký tự, Ollama không tách riêng) · ca hết giới hạn token: '+m.lenHits+' · nạp model lâu nhất '+m.loadMax+' ms</li>':'')+'</ul><small>Model: '+esc(cur.model)+' · '+esc(labelOf(cur.key))+' · bắt đầu '+esc(cur.startedAt)+'</small>';
  compare();
 }
+const firstSent=run=>{for(const t of HSK_AI_TESTS){const e=run.R[t.id];if(e&&e.sent&&e.sent.length)return e.sent}return null};
+const latestOf=key=>{for(let i=RUNS.length-1;i>=0;i--)if(RUNS[i].key===key&&Object.keys(RUNS[i].R).length)return RUNS[i];return null};
+function combosStatus(){
+ $('#combos').innerHTML='<b>4 tổ hợp:</b> '+COMBOS.map(k=>{const n=RUNS.filter(r=>r.key===k&&Object.keys(r.R).length).length;return (n?'<span class="pass">✓</span> ':'<span class="mute">○</span> ')+esc(labelOf(k))+(n?' ('+n+' lượt)':' (chưa chạy)')}).join(' &nbsp;|&nbsp; ');
+}
+function histRefresh(){
+ const h=$('#hist');h.innerHTML=RUNS.map((r,i)=>'<option value="'+i+'">'+esc(runLabel(r))+' – '+esc(r.startedAt.slice(11,19))+'</option>').join('')||'<option>chưa có lượt nào</option>';
+ h.disabled=!RUNS.length;if(cur)h.value=String(RUNS.indexOf(cur));combosStatus();
+}
+function renderTable(run){
+ HSK_AI_TESTS.forEach(t=>{
+  const e=run.R[t.id];
+  if(e)row(t,e.r,e.j,e.r.skipped?'–':(e.ms/1000).toFixed(1)+(tokStr(e.r.meta||(e.r.error&&e.r.error.meta))?'<br><small>'+tokStr(e.r.meta||(e.r.error&&e.r.error.meta))+'</small>':'')+(sentStr(e.sent)?'<br><small class="mute">'+esc(sentStr(e.sent))+'</small>':''));
+  else $('#r-'+t.id).innerHTML='<td>'+t.id+'<br><small>'+t.item+'</small></td><td class="zh">'+esc(t.ans)+'<br><small>'+esc(t.note)+'</small></td><td>'+EXP[t.exp]+'</td><td colspan="6" class="mute">chưa chạy</td>';
+ });
+}
+/* So sánh: mỗi CỘT là một lượt chạy đã có kết quả (không gộp, không ghi đè). Danh sách ca khác trạng thái chỉ dùng lượt gần nhất của mỗi tổ hợp. */
 function compare(){
- const a=RUNS.schema,b=RUNS.json;if(!a||!b){$('#cmp').hidden=true;return}
- const ma=metrics(a.R),mb=metrics(b.R);let diff=[];
- HSK_AI_TESTS.forEach(t=>{const x=a.R[t.id],y=b.R[t.id];if(!x||!y||!x.r.ok||!y.r.ok||x.r.skipped||y.r.skipped)return;const sa=x.r.result.status,sb=y.r.result.status;if(sa!==sb)diff.push(t.id+' ('+t.exp+'): Schema='+ST[sa]+' · JSON thường='+ST[sb])});
- const line=(l,f)=>'<tr><td>'+l+'</td><td>'+f(ma)+'</td><td>'+f(mb)+'</td></tr>';
- $('#cmp').hidden=false;$('#cmp').innerHTML='<b>So sánh JSON Schema và JSON thường</b><div class="tbl"><table><thead><tr><th></th><th>JSON Schema ('+ma.n+' ca)</th><th>JSON thường ('+mb.n+' ca)</th></tr></thead><tbody>'+
+ const runs=RUNS.filter(r=>Object.keys(r.R).length);if(runs.length<2){$('#cmp').hidden=true;return}
+ const ms=runs.map(r=>metrics(r.R)),diff=[],lat=COMBOS.map(latestOf).filter(Boolean);
+ HSK_AI_TESTS.forEach(t=>{const st=lat.map(r=>{const x=r.R[t.id];return x&&x.r.ok&&!x.r.skipped?x.r.result.status:(x&&!x.r.ok?'lỗi':null)});if(lat.length>1&&st.every(v=>v)&&new Set(st).size>1)diff.push(t.id+' ('+t.exp+'): '+lat.map((r,i)=>r.key.replace('schema','Schema').replace('json','JSON').replace('|','/')+'='+(ST[st[i]]||st[i])).join(' · '))});
+ const line=(l,f)=>'<tr><td>'+l+'</td>'+ms.map(m=>'<td>'+f(m)+'</td>').join('')+'</tr>';
+ $('#cmp').hidden=false;$('#cmp').innerHTML='<b>So sánh các lượt chạy (mỗi cột một lượt; cùng prompt, cùng '+N+' ca)</b><div class="tbl"><table><thead><tr><th></th>'+runs.map((r,i)=>'<th>'+esc(runLabel(r))+'<br><small>'+ms[i].n+' ca · '+esc(r.model)+'</small></th>').join('')+'</tr></thead><tbody>'+
+ line('JSON hợp lệ',m=>m.validJson+'/'+m.called)+
+ line('Trả lời rỗng do hết token suy nghĩ',m=>m.thinkErr)+
+ line('Đạt đúng kỳ vọng (chặt) / tính cả Chưa chắc an toàn',m=>m.accStrict+' / '+m.accLenient)+
  line('Câu đúng: phù hợp / chưa chắc / báo động giả mạnh',m=>m.ok.fit+' / '+m.ok.unsure+' / '+m.ok.review)+
  line('Câu mơ hồ: đạt / kết luận sai chắc chắn',m=>m.soft.pass+' / '+m.soft.wrong)+
  line('Câu có lỗi: cần xem lại / chưa chắc / bỏ sót',m=>m.bad.review+' / '+m.bad.unsure+' / '+m.bad.fit)+
+ line('Câu có lỗi được nêu kèm giải thích hiển thị',m=>m.explained+'/'+m.bad.n)+
  line('Gọi đúng loại lỗi',m=>m.typeHit+'/'+m.bad.n)+
- line('Lời giải thích bị cụt (đã ẩn)',m=>m.cut)+
- line('Thiếu/sai đoạn trích',m=>m.noQuote)+
- line('Lỗi định dạng JSON',m=>m.fmt)+
- line('Thời gian trung bình (giây)',m=>m.avg)+
- '</tbody></table></div><p>Ca có trạng thái khác nhau giữa hai chế độ ('+diff.length+'): '+(diff.length?esc(diff.join(' | ')):'không có')+'</p>';
+ line('Lời giải thích không dùng được (đã ẩn)',m=>m.cut)+
+ line('Thời gian trung bình / trung vị / lâu nhất (giây)',m=>m.avg+' / '+m.med+' / '+m.max)+
+ line('Token trả lời TB / suy nghĩ ≈ / prompt lớn nhất',m=>m.metaN?m.avgEval+' / '+m.avgThink+' / '+m.maxPrompt:'–')+
+ '</tbody></table></div><p>Ca có trạng thái khác nhau giữa các tổ hợp (lượt gần nhất của mỗi tổ hợp đã chạy: '+lat.map(r=>'#'+r.id).join(', ')+') ('+diff.length+'): '+(diff.length?esc(diff.join(' | ')):'không có')+'</p>';
 }
 $('#ping').onclick=async()=>{$('#st').textContent='Đang kiểm tra…';const r=await HSK_AI.ping(cfg());$('#st').textContent=r.ok?('Kết nối được. Model '+(r.hasModel?'đã cài.':'CHƯA cài. Chạy: ollama pull '+cfg().model)+' (đang có: '+r.models.join(', ')+')'):r.error.msg};
 $('#run').onclick=async()=>{
- stop=false;$('#run').disabled=true;$('#stop').disabled=false;$('#dl').disabled=true;
- const mode=$('#fmt').value;cur=mode;RUNS[mode]={R:{},when:new Date().toISOString(),model:$('#model').value};
+ stop=false;$('#run').disabled=true;$('#stop').disabled=false;$('#dl').disabled=true;$('#hist').disabled=true;
+ const c=cfg(),run={id:nextId++,key:keyOf(),fmt:c.fmt,think:c.think,predict:c.predict,model:c.model,url:c.url,timeout:c.timeout,skipExact:$('#skip').checked,startedAt:new Date().toISOString(),finishedAt:null,stopped:false,R:{},cfg:c};
+ RUNS.push(run);cur=run;dirty=true;renderTable(run);histRefresh();
+ const t00=Date.now();
  for(const t of HSK_AI_TESTS){
-  if(stop)break;$('#st').textContent='Đang chạy '+t.id+' ('+FM[mode]+')…';
-  ctl=new AbortController();const t0=Date.now();
+  if(stop)break;$('#st').textContent='Đang chạy '+t.id+' – '+runLabel(run)+'…';
+  ctl=new AbortController();const t0=Date.now();SENT=[];
   let r;
-  if($('#skip').checked&&exactData(t))r={ok:true,skipped:true,result:null};
-  else r=await HSK_AI.review(items[t.item],t.ans,cfg(),{signal:ctl.signal});
-  const ms=Date.now()-t0,j=judge(t,r);RUNS[mode].R[t.id]={r,j,ms,mode};row(t,r,j,r.skipped?'–':(ms/1000).toFixed(1));summary();
+  if(run.skipExact&&exactData(t))r={ok:true,skipped:true,result:null};
+  else r=await HSK_AI.review(items[t.item],t.ans,run.cfg,{signal:ctl.signal});
+  const ms=Date.now()-t0,j=judge(t,r),sent=SENT.slice();run.R[t.id]={r,j,ms,mode:run.key,sent};
+  if(cur===run){const mt=r.meta||(r.error&&r.error.meta);row(t,r,j,r.skipped?'–':(ms/1000).toFixed(1)+(tokStr(mt)?'<br><small>'+tokStr(mt)+'</small>':'')+(sentStr(sent)?'<br><small class="mute">'+esc(sentStr(sent))+'</small>':''));summary()}
   if(!r.ok&&(r.error.code==='network'||r.error.code==='origin'||r.error.code==='model'||r.error.code==='cancel')){break}
  }
- $('#run').disabled=false;$('#stop').disabled=true;$('#dl').disabled=!Object.keys(RUNS[mode].R).length;$('#st').textContent=stop?'Đã dừng.':'Xong ('+FM[mode]+').';
- summary();
+ run.stopped=stop||Object.keys(run.R).length<N;run.finishedAt=new Date().toISOString();run.durationSec=Math.round((Date.now()-t00)/1000);
+ $('#run').disabled=false;$('#stop').disabled=true;$('#dl').disabled=!RUNS.some(r=>Object.keys(r.R).length);
+ $('#st').textContent=(stop?'Đã dừng ':'Xong ')+'('+runLabel(run)+').';
+ histRefresh();summary();
 };
+$('#hist').onchange=()=>{const r=RUNS[+$('#hist').value];if(!r)return;cur=r;renderTable(r);summary()};
 $('#stop').onclick=()=>{stop=true;if(ctl)ctl.abort()};
+window.addEventListener('beforeunload',e=>{if(dirty&&RUNS.some(r=>Object.keys(r.R).length)){e.preventDefault();e.returnValue=''}});
 $('#dl').onclick=()=>{
- const runs={};for(const m of Object.keys(RUNS)){const Rr=RUNS[m].R;runs[m]={when:RUNS[m].when,model:RUNS[m].model,metrics:metrics(Rr),results:HSK_AI_TESTS.filter(t=>Rr[t.id]).map(t=>({id:t.id,item:t.item,ans:t.ans,exp:t.exp,expTypes:t.types||null,verdict:Rr[t.id].j.label,ms:Rr[t.id].ms,skipped:!!Rr[t.id].r.skipped,final:Rr[t.id].r.ok&&!Rr[t.id].r.skipped?Rr[t.id].r.result:null,attempts:Rr[t.id].r.attempts||null,error:Rr[t.id].r.ok?null:Rr[t.id].r.error,raw:Rr[t.id].r.raw||(Rr[t.id].r.error&&Rr[t.id].r.error.raw)||null}))}}
- const out={version:3,when:new Date().toISOString(),runs};
- const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,1)],{type:'application/json'}));a.download='ai-test-ket-qua-v3.json';a.click();URL.revokeObjectURL(a.href)};
+ const runs=RUNS.filter(r=>Object.keys(r.R).length).map(r=>{const Rr=r.R;return {
+  id:r.id,key:r.key,format:r.fmt,think:r.think,num_predict:r.predict,num_ctx:(firstSent(r)||[{}])[0].num_ctx||null,temperature:(firstSent(r)||[{}])[0].temperature,model:r.model,url:r.url,timeout_s:r.timeout,skip_exact:r.skipExact,
+  startedAt:r.startedAt,finishedAt:r.finishedAt,durationSec:r.durationSec||null,stopped:!!r.stopped,casesRun:Object.keys(Rr).length,metrics:metrics(Rr),
+  results:HSK_AI_TESTS.filter(t=>Rr[t.id]).map(t=>({id:t.id,item:t.item,ans:t.ans,exp:t.exp,expTypes:t.types||null,verdict:Rr[t.id].j.label,ms:Rr[t.id].ms,skipped:!!Rr[t.id].r.skipped,
+   final:Rr[t.id].r.ok&&!Rr[t.id].r.skipped?Rr[t.id].r.result:null,attempts:Rr[t.id].r.attempts||null,meta:Rr[t.id].r.meta||(Rr[t.id].r.error&&Rr[t.id].r.error.meta)||null,sent:Rr[t.id].sent||[],
+   error:Rr[t.id].r.ok?null:Rr[t.id].r.error,raw:Rr[t.id].r.raw||(Rr[t.id].r.error&&Rr[t.id].r.error.raw)||null}))}});
+ const combos={};COMBOS.forEach(k=>{const ids=runs.filter(r=>r.key===k).map(r=>r.id);combos[k]={runIds:ids,latestRunId:ids.length?ids[ids.length-1]:null}});
+ const out={version:6,build:BUILD,when:new Date().toISOString(),combos,runs};
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(out,null,1)],{type:'application/json'}));a.download='ai-test-ket-qua-v4-think.json';a.click();URL.revokeObjectURL(a.href);dirty=false};
+combosStatus();
 </script></body></html>
