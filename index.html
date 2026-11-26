@@ -39,6 +39,8 @@ textarea{min-height:90px}
 .c{text-align:center;color:var(--mute)}
 .ok{color:var(--accent);font-weight:600}.no{color:var(--seal);font-weight:600}
 .stats{display:flex;gap:16px;color:var(--mute);font-size:.9rem}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-start;justify-content:center;padding:16px 10px;overflow:auto;z-index:5}.modal[hidden]{display:none}.sheet{background:var(--card);border:1px solid var(--line);border-radius:12px;max-width:640px;width:100%;padding:16px}.def{margin:2px 0 6px;padding-left:22px}.ex{border-left:3px solid var(--accent);padding:4px 10px;margin:8px 0}
+.gp{border-top:1px solid var(--line);padding:10px 0}.gp:first-child{border-top:0}.gp summary{cursor:pointer;list-style-position:inside}.gp label{display:flex;gap:8px;align-items:center;margin-top:8px;color:var(--mute);font-size:.9rem}.gp input{width:auto}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw}
 #toast.on{opacity:1}
 @media(prefers-reduced-motion:reduce){#toast{transition:none}}
@@ -54,6 +56,7 @@ textarea{min-height:90px}
 <nav role="tablist" id="tabs">
   <button role="tab" data-t="vocab" aria-selected="true">Từ vựng</button>
   <button role="tab" data-t="hsk" aria-selected="false">Kho HSK</button>
+  <button role="tab" data-t="grammar" aria-selected="false">Ngữ pháp</button>
   <button role="tab" data-t="review" aria-selected="false">Ôn tập</button>
   <button role="tab" data-t="dict" aria-selected="false">Nghe chép</button>
   <button role="tab" data-t="data" aria-selected="false">Dữ liệu</button>
@@ -92,6 +95,15 @@ textarea{min-height:90px}
   </div>
 </section>
 
+<section id="grammar" hidden>
+  <div class="card">
+    <h2>Ngữ pháp theo cấp HSK</h2>
+    <select id="gl" aria-label="Chọn cấp HSK"><option value="1">HSK 1</option><option value="2">HSK 2</option><option value="3">HSK 3</option><option value="4">HSK 4</option><option value="5" selected>HSK 5</option><option value="6">HSK 6</option></select>
+    <p class="c" id="ginfo" style="text-align:left;margin:8px 0 0"></p>
+    <div id="glist"></div>
+  </div>
+</section>
+
 <section id="review" hidden>
   <div class="card">
     <div class="bar" style="margin:0 0 6px"><select id="dir" aria-label="Chiều ôn" style="width:auto"><option value="zv">Trung → Việt</option><option value="vz">Việt → Trung</option></select><button class="btn ghost" id="rstart">Bắt đầu phiên mới</button><span class="c" id="rinfo"></span></div>
@@ -121,9 +133,13 @@ textarea{min-height:90px}
 </section>
 
 </main>
+<div id="modal" class="modal" hidden><div class="sheet" role="dialog" aria-modal="true" aria-label="Chi tiết từ"><div class="bar" style="margin:0 0 6px;justify-content:flex-end"><button class="btn ghost" id="mclose">Đóng</button></div><div id="mbody"></div></div></div>
 <div id="toast" role="status"></div>
 
 <script src="hsk-data.js"></script>
+<script src="hsk-vi.js"></script>
+<script src="hsk-grammar.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -152,7 +168,7 @@ $('#theme').onclick=()=>{const dark=document.documentElement.dataset.theme?docum
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
   document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!==b.dataset.t);
-  if(b.dataset.t==='review')rstart();if(b.dataset.t==='hsk')hrender(true);if(b.dataset.t==='dict'&&!D.cur)dnext();
+  if(b.dataset.t==='review')rstart();if(b.dataset.t==='hsk')hrender(true);if(b.dataset.t==='grammar')grender();if(b.dataset.t==='dict'&&!D.cur)dnext();
 });
 
 /* Vocab */
@@ -167,11 +183,11 @@ $('#bulkAdd').onclick=()=>{let n=0;$('#bulk').value.split('\n').forEach(r=>{cons
 function vlist(){
   const q=$('#q').value.trim().toLowerCase(),l=$('#ql').value;
   const a=S.words.filter(w=>(!l||w.l===l)&&(!q||(w.h+w.p+w.m).toLowerCase().includes(q)));
-  $('#list').innerHTML=a.length?a.map(w=>`<div class="w"><div class="h zh">${esc(w.h)}</div><div class="i"><b>${esc(w.p)}</b><div>${esc(w.m)}</div></div><span class="tag">${esc(w.l||'')}</span><button class="btn ghost" data-s="${esc(w.h)}" aria-label="Nghe">🔊</button><button class="btn ghost" data-e="${w.id}" aria-label="Sửa nghĩa">✎</button><button class="btn ghost" data-d="${w.id}" aria-label="Xóa">✕</button></div>`).join(''):'<p class="c">Chưa có từ nào. Hãy thêm từ ở phía trên.</p>';
+  $('#list').innerHTML=a.length?a.map(w=>`<div class="w"><div class="h zh">${esc(w.h)}</div><div class="i"><b>${esc(w.p)}</b><div>${esc(w.m)}</div></div><span class="tag">${esc(w.l||'')}</span><button class="btn ghost" data-s="${esc(w.h)}" aria-label="Nghe">🔊</button><button class="btn ghost" data-e="${w.id}" aria-label="Sửa nghĩa">✎</button><button class="btn ghost" data-o="${esc(w.h)}" aria-label="Chi tiết">ⓘ</button><button class="btn ghost" data-d="${w.id}" aria-label="Xóa">✕</button></div>`).join(''):'<p class="c">Chưa có từ nào. Hãy thêm từ ở phía trên.</p>';
   stat();
 }
 $('#q').oninput=vlist;$('#ql').onchange=vlist;
-$('#list').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+$('#list').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.o)openDetail(b.dataset.o);
   if(b.dataset.s)speak(b.dataset.s);
   if(b.dataset.e){const w=S.words.find(x=>x.id===b.dataset.e);const n=w&&prompt('Sửa nghĩa cho '+w.h+':',w.m);if(n&&n.trim()){w.m=n.trim();save();vlist()}}
   if(b.dataset.d){S.words=S.words.filter(w=>w.id!==b.dataset.d);save();vlist()}};
@@ -228,18 +244,63 @@ function hrender(reset){
   const lv=$('#hl').value,all=window.HSK[lv]||[],a=hrows(),have=new Set(S.words.map(w=>w.h));
   const got=all.filter(r=>have.has(r[0])).length;
   $('#hinfo').textContent='HSK '+lv+': đã thêm '+got+' / '+all.length+' từ';
-  $('#hlist').innerHTML=a.slice(0,H.n).map(r=>{const vi=HV()[r[0]];return `<div class="w"><div class="h zh">${esc(r[0])}</div><div class="i"><b>${esc(r[1])}</b><div>${vi?esc(vi)+' · ':''}${esc(r[2])}</div></div><button class="btn ghost" data-s="${esc(r[0])}" aria-label="Nghe">🔊</button>${have.has(r[0])?'<span class="tag">Đã có</span>':`<button class="btn" data-a="${esc(r[0])}">Thêm</button>`}</div>`}).join('')||'<p class="c">Không tìm thấy từ nào.</p>';
+  $('#hlist').innerHTML=a.slice(0,H.n).map(r=>{const vi=HV()[r[0]];return `<div class="w"><div class="h zh">${esc(r[0])}</div><div class="i"><b>${esc(r[1])}</b><div>${vi?esc(vi)+' · ':''}${esc(r[2])}</div></div><button class="btn ghost" data-s="${esc(r[0])}" aria-label="Nghe">🔊</button><button class="btn ghost" data-o="${esc(r[0])}">Chi tiết</button>${have.has(r[0])?'<span class="tag">Đã có</span>':`<button class="btn" data-a="${esc(r[0])}">Thêm</button>`}</div>`}).join('')||'<p class="c">Không tìm thấy từ nào.</p>';
   $('#hmore').hidden=a.length<=H.n;
 }
 function hadd(r,lv){return addWord(r[0],r[1],HV()[r[0]]||r[2],'HSK'+lv)}
 $('#hl').onchange=()=>hrender(true);$('#hq').oninput=()=>hrender(true);
 $('#hmore').onclick=()=>{H.n+=50;hrender()};
-$('#hlist').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+$('#hlist').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.o)openDetail(b.dataset.o);
   if(b.dataset.s)speak(b.dataset.s);
   if(b.dataset.a){const lv=$('#hl').value,r=window.HSK[lv].find(x=>x[0]===b.dataset.a);if(r&&hadd(r,lv)){save();vlist();hrender()}}};
 $('#hall').onclick=()=>{if(!window.HSK)return;const lv=$('#hl').value;const rows=window.HSK[lv]||[];
   if(!confirm('Thêm '+rows.length+' từ HSK '+lv+' vào sổ ôn? Những từ đã có sẽ được bỏ qua.'))return;
   let n=0;rows.forEach(r=>{if(hadd(r,lv))n++});save();vlist();hrender();toast('Đã thêm '+n+' từ.')};
+
+/* Chi tiết từ + cách viết */
+const POS={n:'danh từ',v:'động từ',a:'tính từ',d:'phó từ',m:'số từ',q:'lượng từ',r:'đại từ',p:'giới từ',c:'liên từ',u:'trợ từ',y:'trợ từ ngữ khí',e:'thán từ',o:'từ tượng thanh',t:'từ chỉ thời gian',f:'từ phương vị',s:'từ chỉ nơi chốn',l:'cụm từ cố định',nr:'tên người',ns:'địa danh',nt:'tên tổ chức',nz:'danh từ riêng',vn:'động từ (làm danh từ)',ad:'tính từ (làm phó từ)',an:'tính từ (làm danh từ)',b:'từ phân biệt',g:'hình vị',z:'từ trạng thái',cc:'liên từ đẳng lập',mq:'số lượng từ',qv:'lượng từ (động)',qt:'lượng từ (thời gian)'};
+let WR=[];
+function loadDetail(cb){if(window.HSK_D)return cb();const s=document.createElement('script');s.src='hsk-detail.js';s.onload=cb;s.onerror=()=>{toast('Chưa tải được hsk-detail.js. Hãy tải file này lên cùng chỗ với index.html.');cb()};document.head.appendChild(s)}
+function findRow(h){for(const lv in (window.HSK||{})){const r=window.HSK[lv].find(x=>x[0]===h);if(r)return{r,lv}}return null}
+function openDetail(h){loadDetail(()=>showDetail(h))}
+function showDetail(h){
+  const f=findRow(h),w=S.words.find(x=>x.h===h),D=(window.HSK_D||{})[h],vi=HV()[h]||(w&&w.m)||'',pin=f?f.r[1]:(w?w.p:'');
+  let x=`<div class="big zh" style="margin:0">${esc(h)}</div><p class="c" style="margin:0"><b>${esc(pin)}</b>${f?' · HSK '+f.lv:''}</p>`;
+  if(D)x+='<div class="bar" style="justify-content:center">'+D[0].map(p=>`<span class="tag">${esc(POS[p]||p)}</span>`).join('')+'</div>';
+  if(vi)x+=`<h2 style="margin-top:14px">Nghĩa tiếng Việt</h2><p style="margin:0">${esc(vi)}</p>`;
+  if(D){x+='<h2 style="margin-top:14px">Tất cả các nghĩa</h2>';
+    D[2].forEach(g=>{x+=`<p style="margin:8px 0 2px"><b>${esc(g[1])}</b>${g[0]!==h?' · phồn thể <span class="zh">'+esc(g[0])+'</span>':''}</p><ol class="def">${g[2].map(m=>`<li>${esc(m)}</li>`).join('')}</ol>`+(g[3].length?`<p class="c" style="text-align:left;margin:0">Lượng từ: <span class="zh">${g[3].map(esc).join(', ')}</span></p>`:'')});
+    if(D[1])x+=`<p class="c" style="text-align:left">Bộ thủ: <span class="zh">${esc(D[1])}</span></p>`}
+  x+='<h2 style="margin-top:14px">Cách viết</h2><div id="wr" class="bar"></div><div class="bar"><button class="btn ghost" id="wanim">Xem lại nét</button><button class="btn ghost" id="wquiz">Tập viết</button></div>';
+  const ex=(window.HSK_EX||{})[h];
+  if(ex)x+='<h2 style="margin-top:14px">Ví dụ</h2>'+ex.map(e=>`<div class="ex"><div class="zh" style="font-size:1.15rem">${esc(e[0])}</div><div class="c" style="text-align:left">${esc(e[1])}</div><div>${esc(e[2])}</div></div>`).join('');
+  x+='<div class="bar"><button class="btn ghost" id="msp">🔊 Nghe</button>'+(f&&!w?'<button class="btn" id="madd">Thêm vào sổ ôn</button>':'')+'</div>';
+  $('#mbody').innerHTML=x;$('#modal').hidden=false;$('#modal').scrollTop=0;
+  $('#msp').onclick=()=>speak(h);
+  if($('#madd'))$('#madd').onclick=()=>{if(hadd(f.r,f.lv)){save();vlist();hrender();$('#madd').remove();toast('Đã thêm vào sổ ôn.')}};
+  WR=[];const wr=$('#wr');
+  if(window.HanziWriter){const cs=getComputedStyle(document.documentElement),ink=cs.getPropertyValue('--ink').trim(),ln=cs.getPropertyValue('--line').trim();
+    [...h].slice(0,6).forEach(ch=>{const d=document.createElement('div');d.style.cssText='border:1px solid var(--line);border-radius:8px';wr.appendChild(d);
+      WR.push(HanziWriter.create(d,ch,{width:110,height:110,padding:6,strokeColor:ink,outlineColor:ln,radicalColor:'#c8392b',strokeAnimationSpeed:1.2,delayBetweenStrokes:120,onLoadCharDataError:()=>{d.className='zh big';d.textContent=ch}}))});
+    const anim=()=>WR.reduce((p,w)=>p.then(()=>w.animateCharacter()),Promise.resolve());
+    $('#wanim').onclick=anim;$('#wquiz').onclick=()=>WR.forEach(w=>w.quiz());anim();
+  }else{wr.innerHTML='<p class="c">Cần có mạng để xem cách viết chữ.</p>'}
+}
+const mclose=()=>{$('#modal').hidden=true;WR=[];$('#mbody').innerHTML=''};
+$('#mclose').onclick=mclose;$('#modal').onclick=e=>{if(e.target.id==='modal')mclose()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden)mclose()});
+
+/* Ngữ pháp */
+function ginfo(){const lv=$('#gl').value,a=(window.HSK_G&&window.HSK_G[lv])||[];S.g=S.g||{};
+  $('#ginfo').textContent='Đã học '+a.filter((_,i)=>S.g[lv+'-'+i]).length+' / '+a.length+' điểm ngữ pháp'}
+function grender(){
+  if(!window.HSK_G){$('#glist').innerHTML='<p class="c">Chưa có dữ liệu ngữ pháp. Hãy tải file hsk-grammar.js lên cùng chỗ với index.html.</p>';return}
+  const lv=$('#gl').value,a=window.HSK_G[lv]||[];S.g=S.g||{};ginfo();
+  $('#glist').innerHTML=a.map((p,i)=>`<details class="gp"><summary><b class="zh">${esc(p[0])}</b></summary><p class="zh" style="margin:8px 0 4px"><b>${esc(p[1])}</b></p><p style="margin:0 0 6px">${esc(p[2])}</p>${p[3].map(e=>`<div class="ex"><div class="zh" style="font-size:1.1rem">${esc(e[0])} <button class="btn ghost" data-s="${esc(e[0])}" aria-label="Nghe">🔊</button></div><div class="c" style="text-align:left">${esc(e[1])}</div><div>${esc(e[2])}</div></div>`).join('')}<label><input type="checkbox" data-g="${lv}-${i}" ${S.g[lv+'-'+i]?'checked':''}> Đã học điểm này</label></details>`).join('');
+}
+$('#gl').onchange=grender;
+$('#glist').onclick=e=>{const b=e.target.closest('button');if(b&&b.dataset.s)speak(b.dataset.s)};
+$('#glist').onchange=e=>{const k=e.target.dataset.g;if(k){S.g=S.g||{};if(e.target.checked)S.g[k]=1;else delete S.g[k];save();ginfo()}};
 
 vlist();
 </script>
