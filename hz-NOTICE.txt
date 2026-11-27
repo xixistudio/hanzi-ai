@@ -1,0 +1,29 @@
+HANZIAL - TÍNH NĂNG CHIẾT TỰ: NGUỒN DỮ LIỆU VÀ GIẤY PHÉP
+
+1) hz-mmah.js  (window.HZ_MMAH)
+   Trích từ dictionary.txt của "Make Me a Hanzi" (https://github.com/skishore/makemeahanzi).
+   Giấy phép: GNU LGPL v3 (toàn văn: LICENSE-MakeMeAHanzi-LGPL.txt). dictionary.txt lại có nguồn từ Unihan và CJKlib.
+   Lấy: decomposition (IDS), radical, etymology (type, phonetic, semantic, hint) cho 3.088 chữ HSK 1-9 và các thành phần cấu tạo của chúng.
+   Không dùng graphics.txt (Arphic Public License).
+   Tạo bằng hz-ingest.py; file này là bản trích đã chuyển định dạng, có thể tái tạo từ nguồn.
+
+2) hz-unihan.js (window.HZ_UNI)
+   Trích từ Unicode Unihan Database (kVietnamese, kTotalStrokes, kRSUnicode), Unicode License v3 (https://www.unicode.org/license.txt).
+   Bản dùng: unicodetools/data/ucd/12.1.0-Update/Unihan (số nét, bộ) và dev/Unihan (kVietnamese, kTraditionalVariant) của unicode-org/unicodetools.
+   Chỉ dùng kVietnamese làm âm phụ (có thể là âm Nôm); âm Hán Việt lấy từ hz-hv.js. kVietnamese là cách đọc tiếng Việt (gồm âm Hán Việt và có thể cả âm Nôm), không phải danh sách âm Hán Việt thuần.
+
+2b) hz-ids.js (window.HZ_IDS)
+   Bổ sung IDS cho các chữ (HSK và thành phần) mà Make Me a Hanzi không có, từ cjkvi-ids (https://github.com/cjkvi/cjkvi-ids, ids.txt, dựa trên CHISE IDS Database).
+   Giấy phép: GNU GPL v2 (toàn văn: https://www.gnu.org/licenses/old-licenses/gpl-2.0.html). Chỉ là dữ liệu cấu tạo chữ, không kèm mã chương trình.
+
+2c) hz-hv.js (window.HZ_HV)
+   Âm Hán Việt từ Thiều Chửu, "Hán Việt tự điển" (1942), bản số hóa của Phan Cát Tú, repo https://github.com/catusf/tudien (CC0 1.0; tác giả mất năm 1954, văn bản gốc thuộc phạm vi công cộng ở Việt Nam).
+   Chỉ lấy cách đọc, không lấy phần giải nghĩa. Mục chữ giản thể trong bản số hóa được sinh từ chữ phồn thể (theo ghi chú của dự án OpenCidian); thẻ có ghi chú này.
+   Tìm thấy qua https://github.com/OpenCidian/opencidian-data (CC BY-SA 4.0), chỉ dùng để xác định nguồn; không sao chép dữ liệu của dự án đó.
+
+3) hz-data.js (window.HZ)
+   p/t/r: suy ra từ từ vựng của Hanzi AI (complete-hsk-vocabulary, MIT; CC-CEDICT, CC BY-SA 4.0).
+   x: ghi chép tay từ trang Hán điển (zdic.net) cho 10 chữ, chỉ trích ngắn; Hán điển có bản quyền nên chỉ liên kết, không sao chép hàng loạt.
+   ids/mn do AI hỗ trợ, luôn gắn nhãn "Chưa xác minh". Mẹo ghi nhớ không phải lịch sử chữ.
+
+Không nhúng hình giáp cốt/kim văn/triện/lệ vì chưa xác minh được giấy phép từng hình; giao diện chỉ dẫn link tới nguồn.

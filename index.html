@@ -430,6 +430,7 @@ function showDetail(h){
     D[2].forEach(g=>{x+=`<p style="margin:8px 0 2px"><b>${esc(g[1])}</b>${g[0]!==h?' · phồn thể <span class="zh">'+esc(g[0])+'</span>':''}</p><ol class="def">${g[2].map(m=>`<li>${glossLi(m)}</li>`).join('')}</ol>`+(g[3].length?`<p class="c" style="text-align:left;margin:0">Lượng từ: <span class="zh">${g[3].map(esc).join(', ')}</span></p>`:'')});
     if(D[1])x+=`<p class="c" style="text-align:left">Bộ thủ: <span class="zh">${esc(D[1])}</span></p>`}
   x+='<h2 style="margin-top:14px">Cách viết</h2><div id="wr" class="bar"></div><div class="bar"><button class="btn ghost" id="wanim">Xem lại nét</button><button class="btn ghost" id="wquiz">Tập viết</button></div>';
+  x+=hzSection(h);
   const ex=(window.HSK_EX||{})[h];
   if(ex)x+='<h2 style="margin-top:14px">Ví dụ</h2>'+ex.map(e=>`<div class="ex"><div class="zh" style="font-size:1.15rem">${esc(e[0])}</div><div class="c" style="text-align:left">${esc(e[1])}</div><div>${esc(e[2])}</div></div>`).join('');
   x+='<div class="bar"><button class="btn ghost" id="msp">🔊 Nghe</button>'+(f&&!w?'<button class="btn" id="madd">Thêm vào sổ ôn</button>':'')+'</div>';
@@ -444,6 +445,90 @@ function showDetail(h){
     $('#wanim').onclick=anim;$('#wquiz').onclick=()=>WR.forEach(w=>w.quiz());anim();
   }else{wr.innerHTML='<p class="c">Cần có mạng để xem cách viết chữ.</p>'}
 }
+/* Chiết tự (汉字拆解): dữ liệu hz-data.js nạp khi bấm vào một chữ; thiếu dữ liệu thì chỉ hiện "chưa có" */
+function hzLoadJs(src,opt){return new Promise(ok=>{const s=document.createElement('script');s.src=src;s.onload=()=>ok(true);s.onerror=()=>{if(!opt)toast('Chưa tải được '+src+'. Hãy tải file này lên cùng chỗ với index.html.');ok(false)};document.head.appendChild(s)})}
+function loadHz(cb){if(window.HZ)return cb();hzLoadJs('hz-data.js').then(()=>hzLoadJs('hz-mmah.js',1)).then(()=>hzLoadJs('hz-unihan.js',1)).then(()=>hzLoadJs('hz-ids.js',1)).then(()=>hzLoadJs('hz-hv.js',1)).then(cb)}
+const HZH=ch=>/[㐀-䶿一-鿿]/.test(ch);
+function hzSection(h){const u=[...new Set([...h].filter(HZH))].slice(0,8);if(!u.length)return '';
+  return '<h2 style="margin-top:14px">Chiết tự</h2><p class="c" style="text-align:left;margin:0 0 4px">Bấm vào một chữ để xem cấu tạo, nguồn gốc và mẹo ghi nhớ.</p><div class="bar" style="justify-content:center">'+u.map(c=>`<button class="btn ghost zh" data-hz="${esc(c)}" data-from="${esc(h)}" aria-label="Xem chiết tự chữ ${esc(c)}" style="font-size:1.4rem">${esc(c)}</button>`).join('')+'</div>'}
+function openHz(ch,from){loadHz(()=>showHz(ch,from))}
+const HZST={verified:'Đã xác minh',partially_verified:'Một phần',unverified:'Chưa xác minh',missing:'Chưa có dữ liệu'};
+const hzt=(st,why)=>`<span class="tag" title="${esc(why||'')}">${esc(HZST[st])}</span>`;
+const HZLAY={'⿰':'Trái – phải','⿱':'Trên – dưới','⿲':'Trái – giữa – phải','⿳':'Trên – giữa – dưới','⿴':'Bao quanh toàn bộ','⿵':'Bao từ trên','⿶':'Bao từ dưới','⿷':'Bao từ trái','⿸':'Bao từ trên-trái','⿹':'Bao từ trên-phải','⿺':'Bao từ dưới-trái','⿻':'Chồng lên nhau'};
+const HZET={pictographic:'象形 (tượng hình)',ideographic:'biểu ý (指事/会意)',pictophonetic:'形声 (hình thanh)'};
+let HZWORDS=null;
+function hzWords(ch){const L=window.HSK||{},out=[];for(const lv of Object.keys(L).sort((a,b)=>a-b))for(const r of L[lv])if(r[0].indexOf(ch)>=0)out.push([r[0],r[1],lv]);return out}
+function hzRow(k,v,t){return `<p style="margin:6px 0"><b>${esc(k)}:</b> ${v} ${t||''}</p>`}
+function showHz(ch,from){
+  const Z=window.HZ||{c:{}},d=Z.c[ch]||{},M=(window.HZ_MMAH||{})[ch],U=(window.HZ_UNI||{})[ch],EI=(window.HZ_IDS||{})[ch],HV=(window.HZ_HV||{})[ch],HVG=window.HZ_HVG||{},x=d.x,enc=encodeURIComponent(ch),SN=d.sn||(U&&U.ts)||0,SNS=d.sn?'Hán điển':'Unihan';
+  const bk=from?`<div class="bar" style="margin:0 0 6px"><button class="btn ghost" data-hzw="${esc(from)}">← Về từ ${esc(from)}</button></div>`:'';
+  let h=bk+`<div class="big zh" style="margin:0">${esc(ch)}</div>`;
+  // A. Thông tin cơ bản
+  h+='<h2 style="margin-top:12px">Thông tin cơ bản</h2>';
+  h+=hzRow('Pinyin',d.p?'<span class="zh">'+d.p.map(esc).join(' / ')+'</span>':'Chưa có',d.p?hzt(d.pk==='s'?'partially_verified':'unverified',d.pk==='s'?'Lấy từ mục chữ đơn trong từ điển của Hanzi AI':'Suy ra từ cách đọc trong các từ ghép; chưa đối chiếu'):hzt('missing'));
+  const tn=t=>t.normalize('NFD').replace(/[\u0300\u0301\u0303\u0309\u0323]/g,'').normalize('NFC'),uv=U&&U.vn&&U.vn.length?U.vn:null;
+  if(HV&&HV.length){h+=hzRow('Âm Hán Việt',HV.map(esc).join(', '),hzt(HVG[ch]?'unverified':'partially_verified','Thiều Chửu, Hán Việt tự điển (1942), bản số hóa CC0'+(HVG[ch]?'. Chữ giản thể: mục này trong bản số hóa do dự án đó sinh từ chữ phồn thể, chưa đối chiếu riêng':'')));
+    const ex=uv?uv.filter(v=>!HV.some(x=>tn(x)===tn(v))):[];
+    if(ex.length)h+=hzRow('Âm khác theo Unihan (có thể gồm âm Nôm)',ex.map(esc).join(', '),hzt('unverified','Unihan kVietnamese; thường là âm Nôm hoặc cách đọc địa phương, không phải âm Hán Việt'))}
+  else if(uv)h+=hzRow('Âm khác theo Unihan (có thể gồm âm Nôm)',uv.map(esc).join(', '),hzt('unverified','Thiều Chửu không có chữ này. Unihan kVietnamese gồm cả âm Nôm nên chưa chắc là âm Hán Việt'));
+  else h+=hzRow('Âm Hán Việt','Chưa có',hzt('missing','Không có trong Thiều Chửu và Unihan'));
+  h+='<p class="c" style="text-align:left;margin:0 0 6px;font-size:.8rem">Âm Hán Việt là cách đọc chữ Hán trong tiếng Việt, khác với pinyin (cách đọc tiếng Trung hiện đại ở trên) và khác âm Nôm.</p>';
+  h+=hzRow('Phồn thể',d.t?'<span class="zh">'+d.t.map(esc).join(' / ')+'</span>':'Không ghi nhận dạng khác',d.t?hzt(d.tk==='w'?'unverified':'partially_verified',d.tk==='w'?'Suy ra từ từ ghép':'Lấy từ dữ liệu từ vựng'):'');
+  const rad=(M&&M.rad)||d.r||(M&&M.rad)||null,radSrc=M&&M.rad?'Make Me a Hanzi':(d.rk==='z'?'Hán điển':'dữ liệu từ vựng của Hanzi AI');
+  const RS=U&&U.rs;h+=hzRow('Bộ thủ',rad?'<span class="zh">'+esc(rad)+'</span>'+(RS?' · bộ Khang Hy số '+RS[0]+', thêm '+RS[1]+' nét':''):'Chưa có',rad?hzt('partially_verified',radSrc):hzt('missing'));
+  h+=hzRow('Số nét','<span id="hzs">'+(SN?SN+' ('+SNS+')':'đang tải…')+'</span>','<span class="c" style="font-size:.8rem">theo dữ liệu nét viết</span>');
+  const vi=(window.HSK_VI||{})[ch];if(vi)h+=hzRow('Nghĩa',esc(vi));
+  h+='<div class="bar"><div id="hzw" style="border:1px solid var(--line);border-radius:8px"></div><button class="btn ghost" id="hzanim">Xem nét</button></div>';
+  // B. Cấu tạo
+  h+='<h2 style="margin-top:12px">Cấu tạo</h2>';
+  const atom=!!(d.ids&&d.ids.lay==='single'),ids=atom?d.ids.v:((M&&M.ids)||(EI&&EI.ids)||(d.ids&&d.ids.v)||''),idsAI=!atom&&!(M&&M.ids)&&!(EI&&EI.ids)&&!!ids,idsE=!atom&&!(M&&M.ids)&&!!(EI&&EI.ids);
+  if(ids){const lay=HZLAY[[...ids][0]]||(d.ids&&d.ids.lay==='single'?'Chữ đơn, không tách':'');
+    h+=hzRow('Cấu tạo chữ (IDS)','<span class="zh" style="font-size:1.2rem">'+[...ids].map(c=>/[⺀-⻳㐀-䶿一-鿿]/.test(c)&&c!==ch&&(Z.c[c]||(window.HZ_MMAH||{})[c]||(window.HZ_UNI||{})[c])?`<button class="btn ghost zh" data-hz="${esc(c)}" aria-label="Xem chiết tự thành phần ${esc(c)}" style="font-size:1.2rem;padding:2px 8px">${esc(c)}</button>`:esc(c)).join(' ')+'</span>',idsAI?hzt('unverified','Do AI hỗ trợ ghi, chưa đối chiếu với Make Me a Hanzi/Unihan'):hzt('partially_verified',idsE?'cjkvi-ids (dựa trên CHISE)':'Make Me a Hanzi'));
+    if(lay)h+=hzRow('Cách ghép',esc(lay));
+    if(atom&&M&&M.ids)h+='<p class="c" style="text-align:left;margin:0 0 6px">Make Me a Hanzi tách chữ này ở mức nét thô thành '+esc(M.ids)+'; đây là cách tách để dựng nét, không phải nghĩa gốc của chữ.</p>';
+    if(!atom&&d.ids&&d.ids.v&&M&&M.ids&&d.ids.v!==M.ids)h+='<p class="c" style="text-align:left;margin:0 0 6px">Bản ghi cũ do AI hỗ trợ là '+esc(d.ids.v)+' (khác nguồn); đang hiển thị dữ liệu nguồn.</p>';
+    if(!atom&&[...ids].some(c=>/[⺀-⻳㐀-䶿一-鿿]/.test(c)))h+='<p class="c" style="text-align:left;margin:0 0 6px">Bấm vào thành phần để xem thẻ của thành phần đó.</p>';
+    if(idsAI)h+='<p class="c" style="text-align:left;margin:0 0 6px">Chuỗi IDS này do AI hỗ trợ, chưa được đối chiếu với nguồn. Khi nhập dữ liệu Make Me a Hanzi (xem hz-ingest.py) giá trị này được thay bằng dữ liệu nguồn.</p>'}
+  else h+=hzRow('Cấu tạo chữ (IDS)','Chưa có',hzt('missing','Chưa nhập từ Make Me a Hanzi'));
+  if(!ids&&EI&&EI.atom)h+='<p class="c" style="text-align:left;margin:0 0 6px">Nguồn cjkvi-ids không tách chữ này (coi là đơn vị cơ bản hoặc chưa phân tích).</p>';
+  const comps=[...ids].filter(c=>/[⺀-⻳㐀-䶿一-鿿]/.test(c)&&c!==ch);
+  if(comps.length&&!atom){const E=M&&M.et;const role=c=>E&&E.semantic===c?'gợi nghĩa (biểu ý)':E&&E.phonetic===c?'gợi âm (biểu âm)':E&&E.type==='ideographic'?'góp nghĩa (hội ý/chỉ sự, theo Make Me a Hanzi)':'chưa xác định';
+    h+='<p style="margin:6px 0"><b>Vai trò thành phần:</b> '+comps.map(c=>`<span class="zh">${esc(c)}</span> – ${role(c)}`).join('; ')+' '+(E?hzt('partially_verified','Theo trường etymology của Make Me a Hanzi'):hzt('missing','Nguồn không ghi vai trò'))+'</p>'}
+  const lj=x&&x.lj;
+  if(M&&M.et){h+=hzRow('Lục thư (Make Me a Hanzi)',esc(HZET[M.et.type]||M.et.type)+(M.et.phonetic?'; biểu âm: <span class="zh">'+esc(M.et.phonetic)+'</span>':'')+(M.et.semantic?'; biểu ý: <span class="zh">'+esc(M.et.semantic)+'</span>':''),hzt('partially_verified','Phân loại của dự án Make Me a Hanzi, chưa đối chiếu học thuật'))}
+  else if(lj)h+=hzRow('Lục thư (Hán điển)','<span class="zh">'+esc(lj)+'</span>',hzt('partially_verified','Phân loại ghi trên trang Hán điển, chưa đối chiếu nguồn thứ hai'));
+  else h+=hzRow('Lục thư','Chưa có',hzt('missing'));
+  // C. Nguồn gốc & chữ cổ
+  h+='<h2 style="margin-top:12px">Nguồn gốc và chữ cổ</h2>';
+  if(x&&x.sw){h+=`<p style="margin:6px 0"><b>Thuyết văn giải tự</b> (${esc(x.sw.b)}) ${hzt('partially_verified','Đọc qua trang Hán điển, chưa đối chiếu bản Thuyết văn gốc')}</p><p class="zh" style="margin:0 0 4px">${esc(x.sw.t)}</p><p class="c" style="text-align:left;margin:0 0 6px">Nguồn: <a href="https://www.zdic.net/hant/${enc}" target="_blank" rel="noopener">Hán điển</a>${x.sw.part?' · trích một phần':''}. Đây là một cách giải thích truyền thống, không phải kết luận cuối cùng.</p>`;
+    h+='<p class="c" style="text-align:left;margin:0 0 6px">Giả thuyết nghiên cứu hiện đại: chưa ghi nhận trong dữ liệu. '+hzt('missing')+'</p>'}
+  else h+=hzRow('Từ nguyên lịch sử','Chưa có dữ liệu có nguồn cho chữ này',hzt('missing'));
+  if(M&&M.et&&M.et.hint)h+=`<p style="margin:6px 0"><b>Ghi chú từ nguyên (Make Me a Hanzi, tiếng Anh):</b> ${esc(M.et.hint)} ${hzt('unverified','Ghi chú ngắn của dự án nguồn, chưa dẫn tư liệu gốc; xem như giả thuyết')}</p>`;
+  if(x&&x.n){const n=x.n;h+=`<p style="margin:6px 0"><b>Mẫu chữ cổ trên Hán điển</b> (số mẫu, đọc 27/11/2026): giáp cốt ${n[0]}, kim văn ${n[1]}, giản bạch Sở ${n[2]}, tiểu triện ${n[3]}, lệ thư ${n[4]}.</p>`+(x.nb?`<p class="c" style="text-align:left;margin:0 0 6px">${esc(x.nb)}</p>`:'')}
+  h+=`<p class="c" style="text-align:left;margin:6px 0">Hình giáp cốt văn, kim văn, tiểu triện, lệ thư chưa được nhúng vì chưa xác minh được quyền sử dụng. Xem trực tiếp tại nguồn:</p><div class="bar"><a class="btn ghost" href="https://www.zdic.net/hant/${enc}" target="_blank" rel="noopener">Hán điển</a><a class="btn ghost" href="https://en.wiktionary.org/wiki/${enc}" target="_blank" rel="noopener">Wiktionary</a><a class="btn ghost" href="https://www.dong-chinese.com/wiki/${enc}" target="_blank" rel="noopener">Dong Chinese</a><a class="btn ghost" href="https://hanziyuan.net/#${enc}" target="_blank" rel="noopener">Hanziyuan</a></div><p class="c" style="text-align:left;margin:0">Các liên kết cần có mạng. Không phải chữ nào cũng có tư liệu chữ cổ ở các trang này.</p>`;
+  // D. Ghi nhớ
+  h+='<h2 style="margin-top:12px">Ghi nhớ</h2>';
+  if(d.mn&&d.mn.length)h+=d.mn.map(m=>`<div class="ex"><div>${esc(m[1])}</div><p class="c" style="text-align:left;margin:4px 0 0;font-size:.8rem">Mẹo học, không phải lịch sử chữ · soạn có AI hỗ trợ ${hzt('unverified','Chưa được người đối chiếu')}</p></div>`).join('');
+  else if(M&&M.et&&(M.et.semantic||M.et.phonetic)){const VI=window.HSK_VI||{},sem=M.et.semantic,ph=M.et.phonetic,pp=ph&&Z.c[ph]&&Z.c[ph].p,mine=d.p&&d.p[0],sm=sem&&VI[sem]?String(VI[sem]).split(/[;,]/)[0]:'';
+    let t='';if(sem)t+=`Phần <span class="zh">${esc(sem)}</span>${sm?' ('+esc(sm)+')':''} cho biết chữ này liên quan đến nghĩa đó. `;
+    if(ph)t+=`Phần <span class="zh">${esc(ph)}</span> gợi cách đọc${pp&&mine?': '+esc(ph)+' đọc là '+pp.map(esc).join('/')+', chữ này đọc là '+esc(mine)+' (gần giống, không phải lúc nào cũng trùng)':''}. `;
+    if(!sem||!ph)t+='Nguồn không ghi rõ phần còn lại. ';
+    h+=`<div class="ex"><div>${t}</div><p class="c" style="text-align:left;margin:4px 0 0;font-size:.8rem">Mẹo học do hệ thống tự tạo từ dữ liệu cấu tạo của Make Me a Hanzi, không phải lịch sử chữ ${hzt('unverified','Tự ghép, chưa có người soạn')}</p></div>`}
+  else if(ids&&!atom&&comps.length>1){const VI=window.HSK_VI||{};
+    h+=`<div class="ex"><div>Gồm các thành phần: ${comps.map(c=>'<span class="zh">'+esc(c)+'</span>'+(VI[c]?' ('+esc(String(VI[c]).split(/[;,]/)[0])+')':'')).join(' + ')}.</div><p class="c" style="text-align:left;margin:4px 0 0;font-size:.8rem">Mẹo học do hệ thống tự tạo từ cấu tạo, không phải lịch sử chữ ${hzt('unverified','Tự ghép, chưa có người soạn')}</p></div>`}
+  else h+=hzRow('Mẹo ghi nhớ','Chưa có',hzt('missing'));
+  const ws=hzWords(ch);
+  h+=`<h3 style="margin:10px 0 4px">Từ HSK có chứa chữ này (${ws.length})</h3><div class="bar">`+ws.slice(0,24).map(w=>`<button class="btn ghost zh" data-hzw="${esc(w[0])}" title="${esc(w[1])} · HSK ${esc(LVN(w[2]))}">${esc(w[0])}</button>`).join('')+'</div>'+(ws.length>24?`<p class="c" style="text-align:left;margin:0">… và ${ws.length-24} từ khác</p>`:'');
+  h+='<p class="c" style="text-align:left;margin:12px 0 0;font-size:.78rem"><b>Cách đọc nhãn:</b> “Một phần” = có nguồn, chưa đối chiếu nguồn thứ hai; “Chưa xác minh” = suy ra hoặc từ ghi chú ngắn của nguồn; “Chưa có dữ liệu” = không có nguồn; “Mẹo học” = do hệ thống tạo, không phải lịch sử chữ.</p><p class="c" style="text-align:left;margin:4px 0 0;font-size:.78rem">Nguồn dữ liệu: từ vựng Hanzi AI (complete-hsk-vocabulary, MIT; CC-CEDICT, CC BY-SA 4.0)'+(M?'; Make Me a Hanzi (LGPL v3)':'')+(EI&&EI.ids?'; cjkvi-ids (GPL v2)':'')+(HV?'; Thiều Chửu (CC0)':'')+(U?'; Unicode Unihan (Unicode License v3)':'')+'; trích dẫn Hán điển (zdic.net). Phần có nhãn "Chưa xác minh" chưa được đối chiếu với nguồn.</p>';
+  $('#mbody').innerHTML=h;$('#modal').hidden=false;$('#modal').scrollTop=0;
+  WR=[];const hw=$('#hzw');
+  if(window.HanziWriter&&hw){const cs=getComputedStyle(document.documentElement),ink=cs.getPropertyValue('--ink').trim(),ln=cs.getPropertyValue('--line').trim();
+    const w=HanziWriter.create(hw,ch,{width:120,height:120,padding:6,strokeColor:ink,outlineColor:ln,radicalColor:'#c8392b',strokeAnimationSpeed:1.2,delayBetweenStrokes:120,onLoadCharDataError:()=>{hw.className='zh big';hw.textContent=ch;if($('#hzs')&&!SN)$('#hzs').textContent='chưa có'}});
+    WR.push(w);$('#hzanim').onclick=()=>w.animateCharacter();
+    if(HanziWriter.loadCharacterData)HanziWriter.loadCharacterData(ch).then(cd=>{if($('#hzs')&&!SN)$('#hzs').textContent=cd&&cd.strokes?cd.strokes.length:'chưa có'}).catch(()=>{if($('#hzs')&&!SN)$('#hzs').textContent='chưa có'})}
+  else{if($('#hzs')&&!SN)$('#hzs').textContent='chưa có (cần mạng)';if($('#hzanim'))$('#hzanim').remove()}
+}
+$('#mbody').addEventListener('click',e=>{const b=e.target.closest('[data-hz]');if(b){openHz(b.dataset.hz,b.dataset.from||'');return}const w=e.target.closest('[data-hzw]');if(w)openDetail(w.dataset.hzw)});
 const mclose=()=>{$('#modal').hidden=true;WR=[];$('#mbody').innerHTML=''};
 $('#mclose').onclick=mclose;$('#modal').onclick=e=>{if(e.target.id==='modal')mclose()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden)mclose()});
