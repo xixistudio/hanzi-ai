@@ -657,7 +657,7 @@ details.sec>summary svg.ic{width:28px;height:28px}
   <!-- 2b. Kho theo chủ đề -->
   <div class="card vsec">
     <h2 class="vh2">Kho từ vựng theo chủ đề</h2>
-    <p class="vsub">Từ vựng chuyên ngành, tách riêng khỏi kho HSK. Chọn một chủ đề để xem các chủ đề con.</p>
+    <p class="vsub">Từ vựng chuyên ngành, tách riêng khỏi kho HSK. Chọn một chủ đề để xem toàn bộ từ.</p>
     <div class="lvgrid" id="tpgrid"></div>
   </div>
   <!-- 3. Sổ từ -->
@@ -1036,23 +1036,18 @@ function tpGrid(){const el=$('#tpgrid');if(!el)return;const P=tpPacks();
  if(!P.length){el.innerHTML='<p class="c">Chưa có bộ từ theo chủ đề. Hãy tải file topics-index.js lên cùng chỗ với index.html.</p>';return}
  const have=haveSet();
  el.innerHTML=P.map(p=>{const D=(window.TOPIC_DATA||{})[p.id],got=D?D.entries.filter(e=>have.has(e.word)).length:S.words.filter(w=>w.l===tpLabel(p)).length,pc=p.count?Math.round(got/p.count*100):0;
-  return `<button class="lvc tpc2" data-pk="${esc(p.id)}"><span class="lvn">${esc(p.name_vi)}</span>${p.name_zh?'<span class="zh lvt">'+esc(p.name_zh)+'</span>':''}<span class="lvt">${p.count} từ · ${p.subtopics} chủ đề con</span><span class="pbar"><i style="width:${pc}%"></i></span><span class="lvp">${got?'Đã thêm '+got:'Chưa thêm từ nào'}</span></button>`}).join('')}
+  return `<button class="lvc tpc2" data-pk="${esc(p.id)}"><span class="lvn">${esc(p.name_vi)}</span>${p.name_zh?'<span class="zh lvt">'+esc(p.name_zh)+'</span>':''}<span class="lvt">${p.count} từ</span><span class="pbar"><i style="width:${pc}%"></i></span><span class="lvp">${got?'Đã thêm '+got:'Chưa thêm từ nào'}</span></button>`}).join('')}
 function tpOpen(pack){TPV={pack,sub:null,q:'',f:'all',n:60,y:window.scrollY};vShow('vtopic');window.scrollTo(0,0);try{history.pushState({hz:'tp'},'')}catch(e){}
  if(!(window.TOPIC_DATA&&window.TOPIC_DATA[pack])){$('#tpv').innerHTML='<p class="c">Đang tải…</p>';tpLoad(pack,ok=>{if(!ok){tpBack();return}tpRenderV()})}else tpRenderV()}
 function tpBack(){const y=TPV.y||0;vShow('vmain');vlist();requestAnimationFrame(()=>window.scrollTo(0,y))}
 function tpRows(D){const have=haveSet(),q=NS(TPV.q.trim()),qs=q.replace(/\s+/g,'');
- return D.entries.filter(e=>e.topic===TPV.sub&&(TPV.f==='all'||(TPV.f==='in')===have.has(e.word))&&(!q||NS(e.word+' '+e.pinyin+' '+e.meaning_vi+' '+(e.english||'')).includes(q)||NS(e.pinyin).replace(/\s+/g,'').includes(qs)))}
+ return D.entries.filter(e=>(!TPV.sub||e.topic===TPV.sub)&&(TPV.f==='all'||(TPV.f==='in')===have.has(e.word))&&(!q||NS(e.word+' '+e.pinyin+' '+e.meaning_vi+' '+(e.english||'')).includes(q)||NS(e.pinyin).replace(/\s+/g,'').includes(qs)))}
 function tpRenderV(){const el=$('#tpv'),p=tpPacks().find(x=>x.id===TPV.pack),D=window.TOPIC_DATA&&window.TOPIC_DATA[TPV.pack];if(!p||!D){tpBack();return}
  const have=haveSet();
- if(!TPV.sub){const got=D.entries.filter(e=>have.has(e.word)).length,subs=D.topics.slice().sort((a,b)=>a.order-b.order);
-  el.innerHTML=`<button class="vback" data-back="main">← Quay lại Từ vựng</button><div class="lvh"><h2 class="vh2">${esc(p.name_vi)}</h2><span class="zh c">${esc(p.name_zh||'')}</span></div><p class="vsub">${esc(p.desc_vi||'')}</p>
-   <div class="lvbar"><div class="pbar"><i style="width:${D.entries.length?got/D.entries.length*100:0}%"></i></div><span class="c">${D.entries.length} từ · đã thêm ${got} vào Sổ từ</span></div>
-   <p class="vsub" style="font-size:.82rem">Bộ từ do AI soạn, chưa được người duyệt; không thuộc kho HSK. Nguồn tham khảo ghi theo từng từ.</p>
-   <div class="lvgrid">`+subs.map(t=>{const es=D.entries.filter(e=>e.topic===t.id),g=es.filter(e=>have.has(e.word)).length;return `<button class="lvc" data-ts="${esc(t.id)}"><span class="lvn" style="font-size:1rem">${esc(t.name_vi)}</span>${t.name_zh?'<span class="zh lvt">'+esc(t.name_zh)+'</span>':''}<span class="lvt">${es.length} từ</span><span class="pbar"><i style="width:${es.length?g/es.length*100:0}%"></i></span><span class="lvp">${g?'Đã thêm '+g:'Chưa thêm từ nào'}</span></button>`}).join('')+'</div>';return}
- const t=D.topics.find(x=>x.id===TPV.sub)||{name_vi:TPV.sub},all=D.entries.filter(e=>e.topic===TPV.sub),got=all.filter(e=>have.has(e.word)).length;
- el.innerHTML=`<button class="vback" data-back="pack">← ${esc(p.name_vi)}</button><div class="lvh"><h2 class="vh2">${esc(t.name_vi)}</h2><span class="zh c">${esc(t.name_zh||'')}</span><span class="c">${all.length} từ · đã thêm ${got}</span></div>${t.desc_vi?'<p class="vsub">'+esc(t.desc_vi)+'</p>':''}
+ const all=D.entries,got=all.filter(e=>have.has(e.word)).length;
+ el.innerHTML=`<button class="vback" data-back="main">← Quay lại Từ vựng</button><div class="lvh"><h2 class="vh2">${esc(p.name_vi)}</h2><span class="zh c">${esc(p.name_zh||'')}</span><span class="c">${all.length} từ · đã thêm ${got}</span></div>${p.desc_vi?'<p class="vsub">'+esc(p.desc_vi)+'</p>':''}<p class="vsub" style="font-size:.82rem">Bộ từ do AI soạn, chưa được người duyệt; không thuộc kho HSK. Nguồn tham khảo ghi theo từng từ.</p>
   <div class="lvbar"><div class="pbar"><i style="width:${all.length?got/all.length*100:0}%"></i></div></div>
-  <div class="row" style="grid-template-columns:1fr auto"><input id="tpq" type="search" placeholder="Tìm chữ Hán, pinyin, nghĩa…" aria-label="Tìm trong chủ đề" value="${esc(TPV.q)}"><button class="btn ghost" data-all="1">Thêm cả chủ đề vào sổ</button></div>
+  <div class="row" style="grid-template-columns:1fr auto"><input id="tpq" type="search" placeholder="Tìm chữ Hán, pinyin, nghĩa…" aria-label="Tìm trong chủ đề" value="${esc(TPV.q)}"><button class="btn ghost" data-all="1">Thêm cả bộ vào sổ</button></div>
   <div class="chips" id="tpf">${[['all','Tất cả',all.length],['in','Đã thêm vào sổ',got],['out','Chưa thêm',all.length-got]].map(([k,l,c])=>`<button data-f="${k}" aria-selected="${TPV.f===k}">${l} <small>${c}</small></button>`).join('')}</div>
   <div id="tplist" class="wl"></div><div class="bar" style="justify-content:center"><button class="btn ghost" data-more="1" id="tpmore" hidden>Xem thêm</button></div>`;
  tpList()}
@@ -1081,7 +1076,7 @@ $('#tpv').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!
  if(d.more){TPV.n+=60;return tpList()}
  const p=tpPacks().find(x=>x.id===TPV.pack),D=window.TOPIC_DATA&&window.TOPIC_DATA[TPV.pack];if(!p||!D)return;
  if(d.a){const e=D.entries.find(x=>x.id===d.a);if(e&&tpAdd(e,p)){save();tpRenderV();toast('Đã thêm '+e.word+' vào Sổ từ.')}}
- if(d.all){const rows=D.entries.filter(e=>e.topic===TPV.sub);if(!confirm('Thêm '+rows.length+' từ của chủ đề này vào Sổ từ? Những từ đã có sẽ được bỏ qua.'))return;let n=0;rows.forEach(e=>{if(tpAdd(e,p))n++});save();tpRenderV();toast('Đã thêm '+n+' từ.')}});
+ if(d.all){const rows=D.entries;if(!confirm('Thêm '+rows.length+' từ của bộ '+p.name_vi+' vào Sổ từ? Những từ đã có sẽ được bỏ qua.'))return;let n=0;rows.forEach(e=>{if(tpAdd(e,p))n++});save();tpRenderV();toast('Đã thêm '+n+' từ.')}});
 $('#tpv').addEventListener('input',ev=>{if(ev.target.id==='tpq'){TPV.q=ev.target.value;TPV.n=60;tpList()}});
 tpPacks().forEach(p=>{const l=tpLabel(p);if(!$('#ql').querySelector('option[value="'+l+'"]')){const o=document.createElement('option');o.value=l;o.textContent=l;$('#ql').appendChild(o)}});
 
