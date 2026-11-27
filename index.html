@@ -198,10 +198,10 @@ main>section{max-width:900px;margin-left:auto;margin-right:auto}
 main>section#hz{max-width:none}
 body.wide main>section{max-width:1180px}
 /* ===== Tab Chiết tự ===== */
-#hz .hero{position:relative;overflow:hidden;border-radius:18px;border:1px solid var(--line);background:linear-gradient(90deg,var(--hero) 0%,var(--hero) 42%,transparent 78%),url(hz-banner.jpg) right center/auto 100% no-repeat,var(--hero);padding:16px 26px;display:flex;align-items:center;gap:18px;margin-bottom:16px;min-height:96px;box-shadow:var(--sh)}
-#hz .hero img{width:62px;height:auto;flex:none}
-#hz .hero h2{font-size:1.85rem;font-weight:800;margin:0;line-height:1.2}
-#hz .hero p{margin:2px 0 0;font-size:1.02rem}
+#hero{position:relative;overflow:hidden;border-radius:18px;border:1px solid var(--line);background:linear-gradient(90deg,var(--hero) 0%,var(--hero) 42%,transparent 78%),url(hz-banner.jpg) right center/auto 100% no-repeat,var(--hero);padding:16px 26px;display:flex;align-items:center;gap:18px;margin-bottom:16px;min-height:96px;box-shadow:var(--sh)}
+#hero img{width:62px;height:auto;flex:none}
+#hero h2{font-size:1.85rem;font-weight:800;margin:0;line-height:1.2}
+#hero p{margin:2px 0 0;font-size:1.02rem}
 .hzc{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh);margin-bottom:14px}
 .hzmain{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
 .hzl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;padding:18px;border-right:1px solid var(--line);align-content:start}
@@ -321,8 +321,8 @@ details.sec>summary:focus-visible{outline:2px solid var(--lav);outline-offset:-2
 @media(max-width:640px){
  .gs .btn{padding:10px 14px}
  .gs input{font-size:1rem}
- #hz .hero{padding:12px 14px;gap:10px;min-height:80px;background:linear-gradient(90deg,var(--hero) 0%,var(--hero) 55%,transparent 100%),url(hz-banner.jpg) right center/auto 100% no-repeat,var(--hero)}
- #hz .hero img{width:44px}#hz .hero h2{font-size:1.45rem}#hz .hero p{font-size:.9rem}
+ #hero{padding:12px 14px;gap:10px;min-height:80px;background:linear-gradient(90deg,var(--hero) 0%,var(--hero) 55%,transparent 100%),url(hz-banner.jpg) right center/auto 100% no-repeat,var(--hero)}
+ #hero img{width:44px}#hero h2{font-size:1.45rem}#hero p{font-size:.9rem}
  .hzl{grid-template-columns:1fr;justify-items:stretch;padding:14px}
  .hzbox{width:min(250px,72vw);margin:0 auto}
  .hzbox .gl{font-size:min(190px,54vw)}
@@ -357,9 +357,9 @@ details.sec>summary:focus-visible{outline:2px solid var(--lav);outline-offset:-2
 .deco{padding:0;border:0;background:none;box-shadow:none}.deco img{border-radius:14px}
 .gs{border-radius:12px;padding:3px 3px 3px 16px;height:50px}.gs .btn{border-radius:12px;padding:0 26px;height:42px;min-height:0}
 .ib{border-radius:12px;height:50px;width:50px}
-#hz .hero{border-radius:15px;min-height:92px;padding:12px 24px;background:linear-gradient(90deg,var(--hero) 0%,color-mix(in srgb,var(--hero) 88%,transparent) 28%,color-mix(in srgb,var(--hero) 25%,transparent) 52%,transparent 70%),url(hz-banner.jpg) center 62%/cover no-repeat,var(--hero);border:0}
-:root[data-theme=dark] #hz .hero{background:linear-gradient(90deg,var(--hero) 0%,var(--hero) 30%,color-mix(in srgb,var(--hero) 40%,transparent) 60%,color-mix(in srgb,var(--hero) 20%,transparent) 100%),url(hz-banner.jpg) center 62%/cover no-repeat}
-#hz .hero img{width:58px}#hz .hero h2{font-size:32px;margin-bottom:2px}#hz .hero p{font-size:16px}
+#hero{border-radius:15px;min-height:92px;padding:12px 24px;background:linear-gradient(90deg,var(--hero) 0%,color-mix(in srgb,var(--hero) 88%,transparent) 28%,color-mix(in srgb,var(--hero) 25%,transparent) 52%,transparent 70%),url(hz-banner.jpg) center 62%/cover no-repeat,var(--hero);border:0}
+:root[data-theme=dark] #hero{background:linear-gradient(90deg,var(--hero) 0%,var(--hero) 30%,color-mix(in srgb,var(--hero) 40%,transparent) 60%,color-mix(in srgb,var(--hero) 20%,transparent) 100%),url(hz-banner.jpg) center 62%/cover no-repeat}
+#hero img{width:58px}#hero h2{font-size:32px;margin-bottom:2px}#hero p{font-size:16px}
 .hzc{border-radius:17px}
 .hzmain{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1fr);gap:12px;margin-bottom:12px}
 .hzmain>.hzc{margin:0}
@@ -411,7 +411,7 @@ details.sec>summary svg.ic{width:28px;height:28px}
 .vc span,.vc em{font-size:16px;color:#555;opacity:1}:root[data-theme=dark] .vc span,:root[data-theme=dark] .vc em{color:var(--mute)}
 @media(max-width:1240px){.hzmain{grid-template-columns:1fr}}
 @media(max-width:900px){.app{grid-template-columns:minmax(0,1fr)}.brand img{width:50px}.brand h1{font-size:24px}.brand small{font-size:13px}#tabs button{font-size:15px;gap:8px;padding:8px 12px}#tabs button svg{width:20px;height:20px}.ck img{display:none}}
-@media(max-width:640px){.hzl{grid-template-columns:1fr}.hzbox{max-width:260px;margin:0 auto}.hzbox .gl{font-size:min(180px,50vw)}.tiles{display:grid;grid-template-columns:1fr 1fr}.bdgs{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}.side{padding:12px 0 0;border-left:0}.kid .g{font-size:46px}.whole .g{font-size:52px}#hz .hero h2{font-size:24px}#hz .hero p{font-size:14px}details.sec>summary,.vh h3,.hzh{font-size:18px}.vc b{font-size:20px}.vc span,.vc em{font-size:14px}}
+@media(max-width:640px){.hzl{grid-template-columns:1fr}.hzbox{max-width:260px;margin:0 auto}.hzbox .gl{font-size:min(180px,50vw)}.tiles{display:grid;grid-template-columns:1fr 1fr}.bdgs{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}.side{padding:12px 0 0;border-left:0}.kid .g{font-size:46px}.whole .g{font-size:52px}#hero h2{font-size:24px}#hero p{font-size:14px}details.sec>summary,.vh h3,.hzh{font-size:18px}.vc b{font-size:20px}.vc span,.vc em{font-size:14px}}
 
 .vd{display:inline-block;width:8px;height:8px;border-radius:50%;background:#c3c1d6;flex:none;cursor:help;vertical-align:middle}
 .vd.v{background:#2fa76a}.vd.p{background:#5b7cf0}.vd.u{background:#e3a43a}
@@ -423,6 +423,14 @@ details.sec>summary svg.ic{width:28px;height:28px}
 .hzbig .an{position:static;margin:2px auto 0;border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 14px;font-size:.85rem;cursor:pointer;color:var(--ink);min-height:36px}
 .hzbig .an:hover{border-color:var(--accent);color:var(--accent)}
 .hzbox .rb{width:38px;height:38px;top:8px;right:8px}
+#hero{position:relative;padding-right:76px}
+#hero .ib{position:absolute;top:12px;right:12px;width:44px;height:44px;background:color-mix(in srgb,var(--card) 82%,transparent);backdrop-filter:blur(4px)}
+.hico{flex:none;width:62px;height:62px;display:grid;place-items:center}
+.hico img{width:58px;height:auto}
+.hico svg{width:52px;height:52px;padding:11px;border-radius:16px;background:var(--card);box-shadow:var(--sh);fill:none;stroke:var(--lav);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;box-sizing:content-box}
+.hico svg .fl{fill:var(--lav);stroke:none}
+#hz .gs{margin:0 0 16px}
+@media(max-width:640px){#hero{padding-right:60px}#hero .ib{top:8px;right:8px;width:40px;height:40px}.hico{width:46px;height:46px}.hico svg{width:30px;height:30px;padding:8px}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
@@ -448,10 +456,7 @@ details.sec>summary svg.ic{width:28px;height:28px}
   </div>
 </aside>
 <div class="mw">
-<div class="top">
-  <form class="gs" id="gs" role="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="gsq" class="zh" placeholder="Nhập chữ Hán cần tra…" aria-label="Tra chữ Hán (Chiết tự)" autocomplete="off"><button class="btn" type="submit">Tìm kiếm</button></form>
-  <button class="ib" id="theme" aria-label="Đổi giao diện sáng/tối" title="Đổi giao diện sáng/tối"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
-</div>
+<div class="hero" id="hero"><span class="hico" id="heroIco" aria-hidden="true"></span><div><h2 id="heroT">Từ vựng</h2><p id="heroP"></p></div><button class="ib" id="theme" aria-label="Đổi giao diện sáng/tối" title="Đổi giao diện sáng/tối"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button></div>
 <main>
 
 <section id="vocab">
@@ -563,7 +568,7 @@ details.sec>summary svg.ic{width:28px;height:28px}
 </section>
 
 <section id="hz" hidden>
-  <div class="hero"><img src="hz-tree.png" alt="" width="58" height="65"><div><h2>Chiết tự</h2><p>Khám phá cấu tạo, ý nghĩa và cách ghi nhớ chữ Hán</p></div></div>
+  <form class="gs" id="gs" role="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="gsq" class="zh" placeholder="Nhập chữ Hán cần tra…" aria-label="Tra chữ Hán (Chiết tự)" autocomplete="off"><button class="btn" type="submit">Tìm kiếm</button></form>
   <div id="hzbody"></div>
 </section>
 </main>
@@ -640,7 +645,11 @@ const th=localStorage.getItem('hanziai.theme');if(th)document.documentElement.da
 $('#theme').onclick=()=>{const dark=document.documentElement.dataset.theme?document.documentElement.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;const n=dark?'light':'dark';document.documentElement.dataset.theme=n;try{localStorage.setItem('hanziai.theme',n)}catch(e){}};
 
 /* Tabs */
-document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+const HERO={vocab:['Từ vựng','Thêm từ mới, tra nghĩa và xây dựng sổ từ của riêng bạn'],hsk:['Kho HSK','Duyệt từ vựng HSK theo từng cấp và thêm vào sổ ôn'],grammar:['Ngữ pháp','Học các điểm ngữ pháp HSK kèm ví dụ và cách dùng'],trans:['Luyện dịch','Luyện dịch Việt – Trung qua câu, đoạn văn và hội thoại'],hz:['Chiết tự','Khám phá cấu tạo, ý nghĩa và cách ghi nhớ chữ Hán'],copy:['Luyện chép','Tập viết chữ Hán theo thứ tự nét và in trang luyện viết'],dict:['Nghe chép','Nghe đọc rồi gõ lại chữ Hán để luyện tai'],review:['Ôn tập','Ôn lại từ vựng đúng lúc với phương pháp lặp lại ngắt quãng'],data:['Dữ liệu','Sao lưu và khôi phục dữ liệu học tập của bạn']};
+function setHero(t){const h=HERO[t]||HERO.vocab;$('#heroT').textContent=h[0];$('#heroP').textContent=h[1];
+  const b=document.querySelector('#tabs [data-t="'+t+'"] svg');$('#heroIco').innerHTML=t==='hz'?'<img src="hz-tree.png" alt="" width="58" height="65">':(b?b.outerHTML:'')}
+setHero('vocab');
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{setHero(b.dataset.t);
   document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
   document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!==b.dataset.t);
   if(b.dataset.t==='hz')hzTab();window.scrollTo(0,0);if(b.dataset.t==='review')rstart();if(b.dataset.t==='hsk')hrender(true);if(b.dataset.t==='grammar')grender();if(b.dataset.t==='dict'&&!D.cur)dnext();
