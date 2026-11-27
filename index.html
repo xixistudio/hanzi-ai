@@ -131,6 +131,17 @@ body.wide header,body.wide nav,body.wide main{max-width:1180px}
 #trans .pillbtn{width:100%;border-radius:99px;padding:14px;font-size:1.05rem}
 #trans .btn:disabled{background:var(--line);color:var(--mute);cursor:not-allowed}
 #trans .lnk{background:none;border:0;color:var(--mute);cursor:pointer;padding:8px 2px}#trans .lnk:disabled{opacity:.4;cursor:default}
+#trans .rm.vd-near{color:var(--accent)}#trans .rm.vd-unknown{color:#b7791f}
+#trans .mine{margin:4px 0;font-size:1.25rem;line-height:1.9}#trans .mine .un{font-size:.8rem}
+#trans .fx{margin:4px 0}#trans .hdL{margin:6px 0;color:var(--seal)}#trans .sfL{margin:6px 0}
+#trans .hdT{color:var(--seal)}#trans .pcl{list-style:none;padding-left:0}#trans .pcl li{margin:8px 0;padding-bottom:6px;border-bottom:1px solid var(--line)}
+#trans .vt-wrong{color:var(--seal)}#trans .vt-correct,#trans .vt-near{color:var(--accent)}#trans .vt-unknown{color:#b7791f}
+#trans .mk{border-radius:3px}
+#trans .mk.ex{text-decoration:line-through;text-decoration-color:var(--seal);background:color-mix(in srgb,var(--seal) 14%,transparent)}
+#trans .mk.sb{text-decoration:underline wavy #b7791f;text-underline-offset:4px}
+#trans .mk.mv{text-decoration:underline dashed var(--accent);text-underline-offset:4px}
+#trans .mk.hd{font-weight:700;color:var(--seal);text-decoration:underline wavy var(--seal);text-underline-offset:4px}
+#trans .mk.gp{font-size:.8em;border:1px dashed var(--seal);color:var(--seal);padding:0 3px;margin:0 2px}
 #trans .aiB{margin-top:10px;padding:10px 12px;border:1px dashed var(--accent);border-radius:8px}
 #trans .aiT{margin-bottom:4px}#trans .aiW{color:var(--seal);font-size:.9rem;margin:4px 0}
 #trans .aiS{font-size:1.02rem}#trans .aiS.fit{color:var(--accent)}#trans .aiS.review{color:var(--seal)}#trans .aiS.unsure{color:#b7791f}
@@ -708,18 +719,21 @@ function match(it,a){const n=hn(a);if(!n)return{m:'empty'};if(n===hn(it.zh))retu
  const av=(it.avoid||[]).find(x=>hn(x.zh)===n);if(av)return{m:'avoid',why:av.why};return{m:'none'}}
 let aiTried=false;
 function loadAI(cb){if(window.HSK_AI||aiTried){cb();return}aiTried=true;const s=document.createElement('script');s.src='hsk-ai.js';s.onload=s.onerror=()=>cb();document.head.appendChild(s)}
+let chkTried=false;
+function loadScr(src,cb){const s=document.createElement('script');s.src=src;s.onload=s.onerror=()=>cb();document.head.appendChild(s)}
+function loadChk(cb){if(window.HSK_CHK||chkTried){cb();return}chkTried=true;loadScr('hsk-check-data.js',()=>loadScr('hsk-check.js',cb))}
 function load(cb){
- if(window.HSK_T){loaded=true;loadAI(cb);return}
+ if(window.HSK_T){loaded=true;loadChk(()=>loadAI(cb));return}
  if(loading)return;loading=true;
  const s=document.createElement('script');s.src='hsk-t-hsk1.js';
- s.onload=()=>{loading=false;loaded=!!window.HSK_T;loaded?loadAI(cb):fail()};
+ s.onload=()=>{loading=false;loaded=!!window.HSK_T;loaded?loadChk(()=>loadAI(cb)):fail()};
  s.onerror=()=>{loading=false;fail()};document.head.appendChild(s)}
 function fail(){root.innerHTML='<div class="card"><p class="no">Không tải được dữ liệu bài tập (hsk-t-hsk1.js). Hãy tải lại trang hoặc kiểm tra file đã được đưa lên cùng thư mục với index.html.</p></div>'}
 
 function home(){
  aiStop();T.mode=null;persist();
  const B=window.HSK_T;
- let h='<div class="card"><h2>Luyện dịch Việt → Trung (HSK 1)</h2><p class="c" style="text-align:left">Đọc đề tiếng Việt, tự viết bằng tiếng Trung, rồi so với đáp án tham khảo. Máy chỉ so khớp chữ với đáp án trong dữ liệu. Nhận xét bằng AI là tuỳ chọn và hiện chỉ có ở <b>Dịch câu</b> (bật ở phần cài đặt bên dưới). Bài tập chưa được giáo viên hoặc người bản ngữ duyệt.</p><div class="tm">';
+ let h='<div class="card"><h2>Luyện dịch Việt → Trung (HSK 1)</h2><p class="c" style="text-align:left">Đọc đề tiếng Việt, tự viết bằng tiếng Trung, rồi so với đáp án tham khảo. Máy chấm bằng quy tắc ngay trên trình duyệt (không dùng AI): so với đáp án mẫu và các đáp án phụ, chỉ báo <b>lỗi chắc chắn</b> khi có căn cứ rõ ràng; câu khác đáp án mẫu nhưng chưa đủ căn cứ sẽ <b>không bị coi là sai</b>. Nhận xét bằng AI là tuỳ chọn và hiện chỉ có ở <b>Dịch câu</b> (bật ở phần cài đặt bên dưới). Bài tập chưa được giáo viên hoặc người bản ngữ duyệt.</p><div class="tm">';
  MODES.forEach(m=>{const us=units(m.k),d=us.filter(isDone).length;
   h+='<button data-m="'+m.k+'"><b>'+m.n+'</b><span>'+m.d+'</span><span>Đã làm '+d+'/'+us.length+' '+m.u+'</span><div class="pb"><i style="width:'+Math.round(100*d/us.length)+'%"></i></div></button>'});
  h+='</div><div class="bar"><button class="btn ghost" id="trreset">Xóa tiến độ luyện dịch</button></div></div>';
@@ -763,13 +777,13 @@ function aiMount(it,a){
  const box=$('#aibox');if(!box)return;const A=window.HSK_AI;
  if(!A){box.remove();return}
  const cfg=A.load();
- if(!cfg.on){box.innerHTML='<div class="un">Nhận xét bằng AI đang tắt. Bật ở màn hình “Chọn dạng bài” → Cài đặt nhận xét bằng AI.</div>';return}
+ if(!cfg.on){box.innerHTML='<div class="un">Nhận xét bằng AI đang tắt (không bắt buộc, phần chấm ở trên không dùng AI). Bật ở màn hình “Chọn dạng bài” → Cài đặt nhận xét bằng AI.</div>';return}
  const m=match(it,a.a).m;
  if(m==='empty'){box.remove();return}
  if(m==='exact'||m==='alt'){box.innerHTML='<div class="un">Khớp đáp án trong dữ liệu nên không cần hỏi AI.</div>';return}
  const rec0=aiStore().r[it.id],nres=rec0&&typeof rec0==='object'?A.normalize(rec0.res):null,fresh=!!(nres&&rec0.ans===hn(a.a)&&rec0.model===cfg.model&&nres.rv===A.RV),rec=fresh?{res:nres}:null;
  let h='<div class="aiB"><div class="aiT"><b>Nhận xét bằng AI</b> <span class="tag">chỉ để tham khảo</span></div>';
- let shown=fresh;try{h+=fresh?aiResultHtml(rec):aiHintsHtml(A.rules(it,a.a))}catch(e){shown=false;h+='<p class="aiW">Không hiển thị được nhận xét AI đã lưu. Bạn có thể bấm hỏi lại.</p>'}
+ let shown=fresh;try{h+=fresh?aiResultHtml(rec):(chkOn()?'':aiHintsHtml(A.rules(it,a.a)))}catch(e){shown=false;h+='<p class="aiW">Không hiển thị được nhận xét AI đã lưu. Bạn có thể bấm hỏi lại.</p>'}
  h+='<div class="bar"><button class="btn soft" id="aigo">'+(shown?'Hỏi lại AI':'Nhận xét bằng AI')+'</button></div><div id="aistat" class="un" role="status"></div>'+
   '<div class="un">Nhận xét tự động của một mô hình nhỏ ('+esc(cfg.model)+') chạy trên máy bạn: có thể sai, không phải kết luận của giáo viên và không thay đổi tiến độ học của bạn.</div></div>';
  box.innerHTML=h;$('#aigo').onclick=()=>aiGo(it,a)}
@@ -786,18 +800,35 @@ async function aiGo(it,a){
  else{if(btn)btn.disabled=false;st.innerHTML='<span class="no">'+esc(r.error.msg)+'</span>'}
 }
 function open(mode){T.mode=mode;persist();view()}
+
+const VCLS={correct:'ok',near:'ok',wrong:'no',unknown:'mu',empty:'mu',nohan:'mu'};
+const VICON={correct:'✓ ',near:'≈ ',wrong:'✗ ',unknown:'? ',empty:'',nohan:''};
+function chkOn(){return !!(window.HSK_CHK&&window.HSK_CHK.check)}
+function safeCheck(it,a){try{return window.HSK_CHK.check(it,a)}catch(e){return null}}
+function chkBlock(r){
+ let h='<div class="rm '+VCLS[r.verdict]+' vd-'+r.verdict+'">'+VICON[r.verdict]+esc(r.label)+'</div>';
+ if(r.orig&&r.verdict!=='empty'&&r.verdict!=='nohan')h+='<div class="mine"><span class="un">Câu của bạn:</span> <span class="zh mk-line">'+window.HSK_CHK.renderMarked(r,esc)+'</span></div>';
+ if(r.verdict==='unknown')h+='<div class="un" style="margin:4px 0">Câu của bạn khác đáp án mẫu, nhưng máy chưa tìm thấy lỗi chắc chắn. Tiếng Trung có nhiều cách diễn đạt; hãy tự đối chiếu với đáp án bên dưới.</div>';
+ if(r.fix&&(r.verdict==='wrong'||r.verdict==='near'))h+='<div class="fx"><b>Câu sửa gợi ý:</b> <span class="zh">'+esc(r.fix)+'</span></div>';
+ if((r.hard||[]).length)h+='<div class="hdL"><b>Lỗi chắc chắn</b><ul>'+r.hard.map(x=>'<li>'+esc(x.msg)+'</li>').join('')+'</ul></div>';
+ if((r.issues||[]).length)h+='<div class="sfL"><b>Khác biệt so với đáp án mẫu</b> <span class="un">(chưa chắc là lỗi)</span><ul>'+r.issues.map(x=>'<li>'+esc(x.msg)+'</li>').join('')+'</ul></div>';
+ (r.notes||[]).forEach(x=>{h+='<div class="un">'+esc(x)+'</div>'});
+ if((r.slots||[]).length)h+='<details class="kp" open><summary>Đối chiếu theo cụm ý (không phải chấm điểm)</summary><ul>'+r.slots.map(k=>'<li><b class="'+(k.ok?'y':'n')+'">'+(k.ok?'✓':'–')+'</b> '+esc(k.vi)+' <span class="zh">('+(k.forms||[]).map(esc).join(' / ')+')</span></li>').join('')+'</ul></details>';
+ return h}
 function resultHtml(it,a){
+ const cr=chkOn()?safeCheck(it,a.a):null;
  const r=match(it,a.a);let st;
  if(r.m==='exact')st='<div class="rm ok">✓ Khớp đáp án tham khảo.</div>';
  else if(r.m==='alt')st='<div class="rm ok">✓ Khớp một đáp án phụ được chấp nhận.</div>';
  else if(r.m==='avoid')st='<div class="rm no">✗ Trùng với một lỗi thường gặp: '+esc(r.why)+'</div>';
  else if(r.m==='empty')st='<div class="rm mu">Bạn chưa nhập câu trả lời.</div>';
  else st='<div class="rm mu">Chưa khớp chính xác với đáp án nào trong dữ liệu. Điều này không có nghĩa là sai: tiếng Trung có thể diễn đạt bằng nhiều cách. Hãy so với đáp án bên dưới.</div>';
+ if(cr)st=chkBlock(cr);
  const n=hn(a.a);
  const alt=(it.alt||[]).filter(x=>x&&String(x.zh||'').trim()),avoid=(it.avoid||[]).filter(x=>x&&String(x.zh||'').trim()),voc=(it.vocab||[]).filter(x=>x&&String(x.w||'').trim()),gr=(it.grammar||[]).filter(x=>x&&String(x.name||'').trim());
  let h='<div class="rs" role="status">'+st+'<div class="ref zh">'+esc(it.zh)+'</div><div class="rp">'+esc(it.py)+'</div><div class="c" style="text-align:left">Dịch ngược: '+esc(it.back_vi)+'</div>';
  if(it.note)h+='<p style="margin:8px 0 0"><b>Giải thích:</b> '+esc(it.note)+'</p>';
- if((it.key_points||[]).length&&n){h+='<details class="kp" open><summary>Gợi ý tự động theo cụm từ (không phải chấm điểm)</summary><ul>'+it.key_points.map(k=>{const y=k.zh_ok.some(z=>n.includes(hn(z)));return '<li><b class="'+(y?'y':'n')+'">'+(y?'✓':'–')+'</b> '+esc(k.vi)+' <span class="zh">('+k.zh_ok.map(esc).join(' / ')+')</span></li>'}).join('')+'</ul></details>'}
+ if(!cr&&(it.key_points||[]).length&&n){h+='<details class="kp" open><summary>Gợi ý tự động theo cụm từ (không phải chấm điểm)</summary><ul>'+it.key_points.map(k=>{const y=k.zh_ok.some(z=>n.includes(hn(z)));return '<li><b class="'+(y?'y':'n')+'">'+(y?'✓':'–')+'</b> '+esc(k.vi)+' <span class="zh">('+k.zh_ok.map(esc).join(' / ')+')</span></li>'}).join('')+'</ul></details>'}
  if(alt.length)h+='<details open><summary>Đáp án phụ được chấp nhận ('+alt.length+')</summary><ul>'+alt.map(x=>'<li><span class="zh">'+esc(x.zh)+'</span>'+(x.py?' · '+esc(x.py):'')+(x.note?'<br><small>'+esc(x.note)+'</small>':'')+'</li>').join('')+'</ul></details>';
  if(avoid.length)h+='<details open><summary>Lỗi thường gặp cần tránh ('+avoid.length+')</summary><ul>'+avoid.map(x=>'<li><span class="zh">'+esc(x.zh)+'</span>'+(x.why?'<br><small>'+esc(x.why)+'</small>':'')+'</li>').join('')+'</ul></details>';
  if(voc.length)h+='<details open><summary>Từ vựng quan trọng ('+voc.length+')</summary><ul>'+voc.map(x=>'<li><span class="zh">'+esc(x.w)+'</span>'+[x.py,x.vi].filter(Boolean).map(t=>' · '+esc(t)).join('')+'</li>').join('')+'</ul></details>';
@@ -805,24 +836,35 @@ function resultHtml(it,a){
  if((it.over||[]).length)h+='<div class="un" style="margin-top:6px">Từ ngoài HSK 1: '+it.over.map(o=>'<span class="zh">'+esc(o.w)+'</span> ('+esc(o.why)+')').join('; ')+'</div>';
  if((it.needs_check||[]).length)h+='<div class="un" style="margin-top:6px">⚠ Điểm cần người bản ngữ/giáo viên kiểm tra: '+it.needs_check.map(esc).join('; ')+'</div>';
  return h+'</div>'}
+function paraChkHtml(pc){
+ let h='<div class="rm '+VCLS[pc.verdict]+' vd-'+pc.verdict+'">'+VICON[pc.verdict]+esc(pc.label)+' <span class="un">('+pc.counts.correct+' đúng, '+pc.counts.near+' gần đúng, '+pc.counts.unknown+' chưa đủ căn cứ, '+pc.counts.wrong+' có lỗi chắc chắn / '+pc.total+' câu)</span></div>';
+ h+='<details open><summary>Chấm từng câu</summary><ul class="pcl">'+pc.pairs.map(p=>{const r=p.res;
+  return '<li><b class="vt-'+r.verdict+'">'+VICON[r.verdict]+esc(r.label)+'</b><br><span class="un">Câu '+(p.idx+1)+':</span> <span class="zh mk-line">'+window.HSK_CHK.renderMarked(r,esc)+'</span>'+
+  (r.fix&&(r.verdict==='wrong'||r.verdict==='near')?'<br><small><b>Câu sửa:</b> <span class="zh">'+esc(r.fix)+'</span></small>':'')+
+  (r.hard||[]).map(x=>'<br><small class="hdT">• '+esc(x.msg)+'</small>').join('')+
+  (r.issues||[]).map(x=>'<br><small class="un">~ '+esc(x.msg)+'</small>').join('')+'</li>'}).join('')+'</ul></details>';
+ if(pc.missing.length)h+='<div class="un" style="margin-top:4px">Có vẻ chưa dịch: '+pc.missing.map(it=>'<span class="zh">'+esc(it.zh)+'</span> ('+esc(it.back_vi)+')').join('; ')+'</div>';
+ if(pc.extra.length)h+='<div class="un" style="margin-top:4px">Câu không đối chiếu được với đề (chưa chắc là sai): '+pc.extra.map(x=>'<span class="zh">'+esc(x)+'</span>').join('; ')+'</div>';
+ return h}
 function paraResult(u,a){
  const its=u.items,n=hn(a.a),ref=its.map(it=>hn(it.zh)).join('');
  let m='none';
  if(!n)m='empty';else if(n===ref)m='exact';
  else{let rest=n,okk=true;for(const it of its){const c=[it.zh].concat((it.alt||[]).map(y=>y.zh)).map(hn).filter(Boolean).sort((x,y)=>y.length-x.length).find(x=>rest.startsWith(x));if(!c){okk=false;break}rest=rest.slice(c.length)}if(okk&&!rest)m='alt'}
- let st;
+ let st;let pc=null;if(chkOn()&&n){try{pc=window.HSK_CHK.checkPara(its,a.a)}catch(e){pc=null}}
  if(m==='exact')st='<div class="rm ok">✓ Khớp đáp án tham khảo.</div>';
  else if(m==='alt')st='<div class="rm ok">✓ Từng câu khớp đáp án tham khảo hoặc một đáp án phụ trong dữ liệu.</div>';
  else if(m==='empty')st='<div class="rm mu">Bạn chưa nhập bài dịch.</div>';
  else st='<div class="rm mu">Bài dịch của bạn chưa khớp chính xác với đáp án nào trong dữ liệu. Điều này không có nghĩa là sai: cùng một đoạn có thể dịch bằng nhiều cách khác nhau.</div>';
  const ne=x=>String(x||'').trim();
- let h='<div class="rs" role="status">'+st+'<div class="un" style="margin-bottom:6px">Việc so sánh chỉ mang tính tham khảo: máy chỉ so khớp chữ với đáp án trong dữ liệu, chưa chấm bằng AI và không khẳng định bạn sai chỉ vì cách diễn đạt khác đáp án.</div>'+
+ if(pc)st=paraChkHtml(pc);
+ let h='<div class="rs" role="status">'+st+'<div class="un" style="margin-bottom:6px">Việc chấm chỉ mang tính tham khảo: máy chấm bằng quy tắc (không dùng AI) và không khẳng định bạn sai chỉ vì cách diễn đạt khác đáp án.</div>'+
  '<b>Đáp án tham khảo</b><div class="ref zh">'+esc(its.map(it=>it.zh).join(''))+'</div><div class="rp">'+esc(its.map(it=>it.py).join(' '))+'</div>'+
  '<div class="c" style="text-align:left">Dịch ngược: '+esc(its.map(it=>it.back_vi).join(' '))+'</div>';
  const notes=its.filter(it=>ne(it.note));
  if(notes.length)h+='<details open><summary>Giải thích từng câu ('+notes.length+')</summary><ul>'+notes.map(it=>'<li><span class="zh">'+esc(it.zh)+'</span><br><small>'+esc(it.note)+'</small></li>').join('')+'</ul></details>';
  const kps=[];its.forEach(it=>(it.key_points||[]).forEach(k=>{if(k&&ne(k.vi)&&(k.zh_ok||[]).length)kps.push(k)}));
- if(kps.length&&n)h+='<details class="kp" open><summary>Gợi ý tự động theo cụm từ (không phải chấm điểm)</summary><ul>'+kps.map(k=>{const y=k.zh_ok.some(z=>n.includes(hn(z)));return '<li><b class="'+(y?'y':'n')+'">'+(y?'✓':'–')+'</b> '+esc(k.vi)+' <span class="zh">('+k.zh_ok.map(esc).join(' / ')+')</span></li>'}).join('')+'</ul></details>';
+ if(!pc&&kps.length&&n)h+='<details class="kp" open><summary>Gợi ý tự động theo cụm từ (không phải chấm điểm)</summary><ul>'+kps.map(k=>{const y=k.zh_ok.some(z=>n.includes(hn(z)));return '<li><b class="'+(y?'y':'n')+'">'+(y?'✓':'–')+'</b> '+esc(k.vi)+' <span class="zh">('+k.zh_ok.map(esc).join(' / ')+')</span></li>'}).join('')+'</ul></details>';
  const grp=(title,key,fmt)=>{const rows=its.map(it=>({it,xs:(it[key]||[]).filter(x=>x&&ne(x.zh))})).filter(g=>g.xs.length);
   const tot=rows.reduce((t,g)=>t+g.xs.length,0);if(!tot)return '';
   return '<details open><summary>'+title+' ('+tot+')</summary><ul>'+rows.map(g=>'<li>Với câu <span class="zh">'+esc(g.it.zh)+'</span><ul>'+g.xs.map(fmt).join('')+'</ul></li>').join('')+'</ul></details>'};
