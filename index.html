@@ -654,6 +654,12 @@ details.sec>summary svg.ic{width:28px;height:28px}
     <p class="vsub">Chọn một cấp để xem toàn bộ từ của cấp đó.</p>
     <div class="lvgrid" id="lvgrid"></div>
   </div>
+  <!-- 2b. Kho theo chủ đề -->
+  <div class="card vsec">
+    <h2 class="vh2">Kho từ vựng theo chủ đề</h2>
+    <p class="vsub">Từ vựng chuyên ngành, tách riêng khỏi kho HSK. Chọn một chủ đề để xem các chủ đề con.</p>
+    <div class="lvgrid" id="tpgrid"></div>
+  </div>
   <!-- 3. Sổ từ -->
   <div class="card vsec" id="nb">
     <div class="nbh"><h2 class="vh2">Sổ từ của tôi</h2><span class="c" id="stat2"></span></div>
@@ -693,6 +699,8 @@ details.sec>summary svg.ic{width:28px;height:28px}
     <div class="bar" style="justify-content:center"><button class="btn ghost" id="lvmore" hidden>Xem thêm</button></div>
   </div>
  </div>
+ <!-- Màn hình chủ đề -->
+ <div id="vtopic" hidden><div class="card vsec" id="tpv"></div></div>
  <!-- Màn hình học -->
  <div id="vstudy" hidden>
   <div class="card vsec">
@@ -782,6 +790,7 @@ details.sec>summary svg.ic{width:28px;height:28px}
 <div id="printRoot" aria-hidden="true"></div>
 
 <script src="hsk-data.js"></script>
+<script src="topics-index.js"></script>
 <script src="hsk-vi.js"></script>
 <script src="hsk-grammar.js"></script>
 <script src="hsk-grammar-official.js"></script>
@@ -892,7 +901,7 @@ function vlist(){
    `<p class="c">${W.length?'Không có từ nào khớp bộ lọc.':'Sổ từ còn trống. Hãy tra cứu hoặc mở một cấp HSK để thêm từ.'}</p>`;
   $('#nbmore').hidden=a.length<=NB.n;
   if($('#stat2'))$('#stat2').textContent=W.length?cnt.all+' từ':'';
-  stat();if(typeof lvGrid==='function')lvGrid();
+  stat();if(typeof lvGrid==='function')lvGrid();if(typeof tpGrid==='function')tpGrid();
 }
 $('#q').oninput=()=>{NB.n=60;vlist()};$('#ql').onchange=()=>{NB.n=60;vlist()};
 $('#nbmore').onclick=()=>{NB.n+=60;vlist()};
@@ -994,7 +1003,7 @@ function lvGrid(){if(!window.HSK||!$('#lvgrid'))return;const have=haveSet(),know
     return `<button class="lvc" data-lv="${lv}"><span class="lvn">HSK ${LVN(lv)}</span><span class="lvt">${all.length.toLocaleString('vi-VN')} từ</span><span class="pbar"><i style="width:${pc}%"></i></span><span class="lvp">${got?'Đã thêm '+got.toLocaleString('vi-VN')+(kn?' · thuộc '+kn:''):'Chưa thêm từ nào'}</span></button>`}).join('')}
 /* Màn hình cấp HSK */
 let LV={lv:'1',f:'all',n:60,y:0};
-function vShow(view){['vmain','vlevel','vstudy'].forEach(id=>$('#'+id).hidden=id!==view)}
+function vShow(view){['vmain','vlevel','vstudy','vtopic'].forEach(id=>$('#'+id).hidden=id!==view)}
 function lvOpen(lv){LV={lv,f:'all',n:60,y:window.scrollY};$('#lvq').value='';vShow('vlevel');lvRender();window.scrollTo(0,0);try{history.pushState({hz:'lv'},'')}catch(e){}}
 function vBack(){const y=LV.y||0;vShow('vmain');vlist();requestAnimationFrame(()=>window.scrollTo(0,y))}
 function lvRows(){const all=(window.HSK&&window.HSK[LV.lv])||[],have=haveSet(),q=$('#lvq').value.trim(),qn=NS(q),qs=qn.replace(/\s+/g,'');
@@ -1007,7 +1016,7 @@ function lvRender(){const all=(window.HSK&&window.HSK[LV.lv])||[],have=haveSet()
   $('#lvmore').hidden=a.length<=LV.n}
 $('#lvgrid').onclick=e=>{const b=e.target.closest('[data-lv]');if(b)lvOpen(b.dataset.lv)};
 $('#lvback').onclick=()=>{if(history.state&&history.state.hz==='lv')history.back();else vBack()};
-window.addEventListener('popstate',()=>{if(!$('#vlevel').hidden)vBack();else if(!$('#vstudy').hidden)stClose(true)});
+window.addEventListener('popstate',()=>{if(!$('#vtopic').hidden)tpBack();else if(!$('#vlevel').hidden)vBack();else if(!$('#vstudy').hidden)stClose(true)});
 $('#lvq').oninput=()=>{LV.n=60;lvRender()};$('#lvmore').onclick=()=>{LV.n+=60;lvRender()};
 $('#lvf').onclick=e=>{const b=e.target.closest('[data-f]');if(b){LV.f=b.dataset.f;LV.n=60;lvRender()}};
 $('#lvlist').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.o)openDetail(b.dataset.o);if(b.dataset.s)speak(b.dataset.s);
@@ -1015,6 +1024,66 @@ $('#lvlist').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.da
 $('#hall').onclick=()=>{if(!window.HSK)return;const lv=LV.lv,rows=window.HSK[lv]||[];
   if(!confirm('Thêm '+rows.length+' từ HSK '+LVN(lv)+' vào Sổ từ? Những từ đã có sẽ được bỏ qua.'))return;
   let n=0;rows.forEach(r=>{if(hadd(r,lv))n++});save();lvRender();toast('Đã thêm '+n+' từ.')};
+
+/* Kho từ vựng theo chủ đề (ngoài kho HSK). Danh sách bộ: topics-index.js (TOPIC_PACKS); dữ liệu: topic-<mã>.js (TOPIC_DATA) */
+const tpPacks=()=>window.TOPIC_PACKS||[];
+let TPV={pack:null,sub:null,q:'',f:'all',n:60,y:0};
+function tpLoad(id,cb){window.TOPIC_DATA=window.TOPIC_DATA||{};if(window.TOPIC_DATA[id])return cb(true);const p=tpPacks().find(x=>x.id===id);if(!p)return cb(false);
+ const s=document.createElement('script');s.src=p.file;s.onload=()=>cb(!!window.TOPIC_DATA[id]);s.onerror=()=>{toast('Chưa tải được '+p.file+'. Hãy tải file này lên cùng chỗ với index.html.');cb(false)};document.head.appendChild(s)}
+const tpLabel=p=>p.tag||p.name_vi;
+function tpAdd(e,p){return addWord(e.word,e.pinyin,e.meaning_vi,tpLabel(p))}
+function tpGrid(){const el=$('#tpgrid');if(!el)return;const P=tpPacks();
+ if(!P.length){el.innerHTML='<p class="c">Chưa có bộ từ theo chủ đề. Hãy tải file topics-index.js lên cùng chỗ với index.html.</p>';return}
+ const have=haveSet();
+ el.innerHTML=P.map(p=>{const D=(window.TOPIC_DATA||{})[p.id],got=D?D.entries.filter(e=>have.has(e.word)).length:S.words.filter(w=>w.l===tpLabel(p)).length,pc=p.count?Math.round(got/p.count*100):0;
+  return `<button class="lvc tpc2" data-pk="${esc(p.id)}"><span class="lvn">${esc(p.name_vi)}</span>${p.name_zh?'<span class="zh lvt">'+esc(p.name_zh)+'</span>':''}<span class="lvt">${p.count} từ · ${p.subtopics} chủ đề con</span><span class="pbar"><i style="width:${pc}%"></i></span><span class="lvp">${got?'Đã thêm '+got:'Chưa thêm từ nào'}</span></button>`}).join('')}
+function tpOpen(pack){TPV={pack,sub:null,q:'',f:'all',n:60,y:window.scrollY};vShow('vtopic');window.scrollTo(0,0);try{history.pushState({hz:'tp'},'')}catch(e){}
+ if(!(window.TOPIC_DATA&&window.TOPIC_DATA[pack])){$('#tpv').innerHTML='<p class="c">Đang tải…</p>';tpLoad(pack,ok=>{if(!ok){tpBack();return}tpRenderV()})}else tpRenderV()}
+function tpBack(){const y=TPV.y||0;vShow('vmain');vlist();requestAnimationFrame(()=>window.scrollTo(0,y))}
+function tpRows(D){const have=haveSet(),q=NS(TPV.q.trim()),qs=q.replace(/\s+/g,'');
+ return D.entries.filter(e=>e.topic===TPV.sub&&(TPV.f==='all'||(TPV.f==='in')===have.has(e.word))&&(!q||NS(e.word+' '+e.pinyin+' '+e.meaning_vi+' '+(e.english||'')).includes(q)||NS(e.pinyin).replace(/\s+/g,'').includes(qs)))}
+function tpRenderV(){const el=$('#tpv'),p=tpPacks().find(x=>x.id===TPV.pack),D=window.TOPIC_DATA&&window.TOPIC_DATA[TPV.pack];if(!p||!D){tpBack();return}
+ const have=haveSet();
+ if(!TPV.sub){const got=D.entries.filter(e=>have.has(e.word)).length,subs=D.topics.slice().sort((a,b)=>a.order-b.order);
+  el.innerHTML=`<button class="vback" data-back="main">← Quay lại Từ vựng</button><div class="lvh"><h2 class="vh2">${esc(p.name_vi)}</h2><span class="zh c">${esc(p.name_zh||'')}</span></div><p class="vsub">${esc(p.desc_vi||'')}</p>
+   <div class="lvbar"><div class="pbar"><i style="width:${D.entries.length?got/D.entries.length*100:0}%"></i></div><span class="c">${D.entries.length} từ · đã thêm ${got} vào Sổ từ</span></div>
+   <p class="vsub" style="font-size:.82rem">Bộ từ do AI soạn, chưa được người duyệt; không thuộc kho HSK. Nguồn tham khảo ghi theo từng từ.</p>
+   <div class="lvgrid">`+subs.map(t=>{const es=D.entries.filter(e=>e.topic===t.id),g=es.filter(e=>have.has(e.word)).length;return `<button class="lvc" data-ts="${esc(t.id)}"><span class="lvn" style="font-size:1rem">${esc(t.name_vi)}</span>${t.name_zh?'<span class="zh lvt">'+esc(t.name_zh)+'</span>':''}<span class="lvt">${es.length} từ</span><span class="pbar"><i style="width:${es.length?g/es.length*100:0}%"></i></span><span class="lvp">${g?'Đã thêm '+g:'Chưa thêm từ nào'}</span></button>`}).join('')+'</div>';return}
+ const t=D.topics.find(x=>x.id===TPV.sub)||{name_vi:TPV.sub},all=D.entries.filter(e=>e.topic===TPV.sub),got=all.filter(e=>have.has(e.word)).length;
+ el.innerHTML=`<button class="vback" data-back="pack">← ${esc(p.name_vi)}</button><div class="lvh"><h2 class="vh2">${esc(t.name_vi)}</h2><span class="zh c">${esc(t.name_zh||'')}</span><span class="c">${all.length} từ · đã thêm ${got}</span></div>${t.desc_vi?'<p class="vsub">'+esc(t.desc_vi)+'</p>':''}
+  <div class="lvbar"><div class="pbar"><i style="width:${all.length?got/all.length*100:0}%"></i></div></div>
+  <div class="row" style="grid-template-columns:1fr auto"><input id="tpq" type="search" placeholder="Tìm chữ Hán, pinyin, nghĩa…" aria-label="Tìm trong chủ đề" value="${esc(TPV.q)}"><button class="btn ghost" data-all="1">Thêm cả chủ đề vào sổ</button></div>
+  <div class="chips" id="tpf">${[['all','Tất cả',all.length],['in','Đã thêm vào sổ',got],['out','Chưa thêm',all.length-got]].map(([k,l,c])=>`<button data-f="${k}" aria-selected="${TPV.f===k}">${l} <small>${c}</small></button>`).join('')}</div>
+  <div id="tplist" class="wl"></div><div class="bar" style="justify-content:center"><button class="btn ghost" data-more="1" id="tpmore" hidden>Xem thêm</button></div>`;
+ tpList()}
+function tpList(){const D=window.TOPIC_DATA[TPV.pack],a=tpRows(D);
+ $('#tplist').innerHTML=a.length?a.slice(0,TPV.n).map(e=>{const w=S.words.find(z=>z.h===e.word);const hl=e.hsk&&e.hsk.label&&e.hsk.label!=='Ngoài HSK'?'<span class="tag">'+esc(e.hsk.label)+'</span>':'';
+  return `<div class="wr"><div class="wh zh">${esc(e.word)}</div><div class="wi"><b>${esc(e.pinyin)}</b><span>${esc(e.meaning_vi)}</span></div><div class="wm">${hl}${w?nbStatus(w):''}</div><div class="wa"><button class="ic" data-s="${esc(e.word)}" aria-label="Nghe ${esc(e.word)}" title="Nghe">🔊</button><button class="ic" data-o="${esc(e.id)}" aria-label="Chi tiết ${esc(e.word)}" title="Chi tiết">ⓘ</button>${w?'<span class="added">✓ Đã lưu</span>':`<button class="btn sm" data-a="${esc(e.id)}">+ Thêm</button>`}</div></div>`}).join(''):'<p class="c">Không tìm thấy từ nào.</p>';
+ $('#tpmore').hidden=a.length<=TPV.n}
+function showTopicWord(id){const D=window.TOPIC_DATA[TPV.pack],e=D&&D.entries.find(x=>x.id===id);if(!e)return;const have=S.words.some(w=>w.h===e.word);
+ const src=(e.sources||[]).map(k=>D.sources[k]).filter(Boolean);
+ let x=`<div class="big zh" style="margin:0">${esc(e.word)}</div><p class="c" style="margin:0"><b>${esc(e.pinyin)}</b></p><div class="bar" style="justify-content:center">${e.pos?'<span class="tag">'+esc(e.pos)+'</span>':''}<span class="tag">${esc(e.hsk&&e.hsk.label||'Ngoài HSK')}</span></div>`
+  +`<h2 style="margin-top:14px">Nghĩa tiếng Việt</h2><p style="margin:0">${esc(e.meaning_vi)}</p>`+(e.english?`<p class="c" style="text-align:left;margin:4px 0 0">Tiếng Anh: ${esc(e.english)}</p>`:'')
+  +(e.note?`<p class="c" style="text-align:left">Ghi chú: ${esc(e.note)}</p>`:'')
+  +(e.example_zh?`<h2 style="margin-top:14px">Ví dụ</h2><div class="ex"><div class="zh" style="font-size:1.15rem">${esc(e.example_zh)}</div><div>${esc(e.example_vi||'')}</div><div class="c" style="text-align:left">Ví dụ ${esc(e.example_source||'tự soạn')}${e.reviewed?'':', chưa được người duyệt'}.</div></div>`:'')
+  +`<h2 style="margin-top:14px">Nguồn tham khảo</h2>`+(src.length?'<ul style="margin:0;padding-left:18px">'+src.map(s=>`<li>${/^https?:\/\//.test(s.url||'')?`<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title||s.url)}</a>`:esc(s.title||'')}${s.publisher?' <span class="c">('+esc(s.publisher)+')</span>':''}</li>`).join('')+'</ul>':'<p class="c" style="text-align:left;margin:0">Thuật ngữ thông dụng, chưa gắn nguồn cụ thể.</p>')
+  +`<div class="bar"><button class="btn ghost" id="msp">🔊 Nghe</button>${have?'<span class="tag">Đã có trong Sổ từ</span>':'<button class="btn" id="madd">Thêm vào Sổ từ</button>'}</div>`;
+ $('#mbody').innerHTML=x;$('#modal').hidden=false;$('#modal').scrollTop=0;WR=[];
+ $('#msp').onclick=()=>speak(e.word);
+ if($('#madd'))$('#madd').onclick=()=>{const p=tpPacks().find(z=>z.id===TPV.pack);if(tpAdd(e,p)){save();vlist();tpList();$('#madd').replaceWith(Object.assign(document.createElement('span'),{className:'tag',textContent:'Đã có trong Sổ từ'}));toast('Đã thêm vào Sổ từ.')}}}
+$('#tpgrid').addEventListener('click',ev=>{const b=ev.target.closest('[data-pk]');if(b)tpOpen(b.dataset.pk)});
+$('#tpv').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;const d=b.dataset;
+ if(d.back==='main'){if(history.state&&history.state.hz==='tp')history.back();else tpBack();return}
+ if(d.back==='pack'){TPV.sub=null;TPV.q='';TPV.f='all';tpRenderV();window.scrollTo(0,0);return}
+ if(d.ts){TPV.sub=d.ts;TPV.q='';TPV.f='all';TPV.n=60;tpRenderV();window.scrollTo(0,0);return}
+ if(d.f){TPV.f=d.f;TPV.n=60;tpRenderV();return}
+ if(d.s)return speak(d.s);if(d.o)return showTopicWord(d.o);
+ if(d.more){TPV.n+=60;return tpList()}
+ const p=tpPacks().find(x=>x.id===TPV.pack),D=window.TOPIC_DATA&&window.TOPIC_DATA[TPV.pack];if(!p||!D)return;
+ if(d.a){const e=D.entries.find(x=>x.id===d.a);if(e&&tpAdd(e,p)){save();tpRenderV();toast('Đã thêm '+e.word+' vào Sổ từ.')}}
+ if(d.all){const rows=D.entries.filter(e=>e.topic===TPV.sub);if(!confirm('Thêm '+rows.length+' từ của chủ đề này vào Sổ từ? Những từ đã có sẽ được bỏ qua.'))return;let n=0;rows.forEach(e=>{if(tpAdd(e,p))n++});save();tpRenderV();toast('Đã thêm '+n+' từ.')}});
+$('#tpv').addEventListener('input',ev=>{if(ev.target.id==='tpq'){TPV.q=ev.target.value;TPV.n=60;tpList()}});
+tpPacks().forEach(p=>{const l=tpLabel(p);if(!$('#ql').querySelector('option[value="'+l+'"]')){const o=document.createElement('option');o.value=l;o.textContent=l;$('#ql').appendChild(o)}});
 
 /* Học từ: Flashcard, Trắc nghiệm, Ôn tập thông minh – dùng chung S.words và srsGrade */
 let ST={mode:'',q:[],i:0,ok:0,bad:0,flip:false,ans:null};
