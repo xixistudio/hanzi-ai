@@ -204,10 +204,11 @@ body.wide header,body.wide nav,body.wide main{max-width:1180px}
 <section id="grammar" hidden>
   <div class="card">
     <h2>Ngữ pháp theo cấp HSK</h2>
-    <select id="gl" aria-label="Chọn cấp HSK"><option value="1">HSK 1</option><option value="2">HSK 2</option><option value="3">HSK 3</option><option value="4">HSK 4</option><option value="5" selected>HSK 5</option><option value="6">HSK 6</option></select>
+    <select id="gp" aria-label="Chương trình"><option value="all">Tất cả</option><option value="20">HSK 2.0</option><option value="30" selected>HSK 3.0</option><option value="both">Cả hai chương trình</option><option value="supp">Kiến thức bổ trợ</option></select>
+    <select id="gl" aria-label="Chọn cấp HSK"><option value="">Tất cả cấp</option><option value="1" selected>HSK 1</option><option value="2">HSK 2</option><option value="3">HSK 3</option><option value="4">HSK 4</option><option value="5">HSK 5</option><option value="6">HSK 6</option><option value="7-9">HSK 7–9</option></select>
     <input id="gq" type="search" placeholder="Tìm điểm ngữ pháp (chữ Hán, pinyin hoặc tiếng Việt)" aria-label="Tìm ngữ pháp" style="width:100%;margin:8px 0 0;box-sizing:border-box">
     <p class="c" id="ginfo" style="text-align:left;margin:8px 0 0"></p>
-    <p class="c" style="text-align:left;margin:4px 0 0;font-size:.85rem">Xếp cấp là tổng hợp tham khảo cho HSK 2.0 (kỳ thi không công bố danh sách ngữ pháp chính thức theo cấp). Giải thích và ví dụ do Hanzi AI soạn.</p>
+    <p class="c" style="text-align:left;margin:4px 0 0;font-size:.85rem">Cấp và thứ tự theo 《HSK 考试大纲》2025 (HSK 3.0, 593 điểm). Mặc định hiện HSK 3.0; thẻ “HSK 2.0” cho biết bài cũng thuộc danh sách HSK 2.0 cũ (cấp 2.0 lưu riêng); “Bổ trợ” là bài chưa thuộc danh mục chính thức. Giải thích và ví dụ do Hanzi AI soạn.</p>
     <div id="glist"></div>
   </div>
 </section>
@@ -284,6 +285,9 @@ body.wide header,body.wide nav,body.wide main{max-width:1180px}
 <script src="hsk-data.js"></script>
 <script src="hsk-vi.js"></script>
 <script src="hsk-grammar.js"></script>
+<script src="hsk-grammar-official.js"></script>
+<script src="hsk-grammar-gen.js"></script>
+<script src="hsk-grammar-auth.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
@@ -445,20 +449,50 @@ $('#mclose').onclick=mclose;$('#modal').onclick=e=>{if(e.target.id==='modal')mcl
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden)mclose()});
 
 /* Ngữ pháp */
-function ginfo(){const lv=$('#gl').value,a=(window.HSK_G&&window.HSK_G[lv])||[];S.g=S.g||{};
-  $('#ginfo').textContent='Đã học '+a.filter((_,i)=>S.g[lv+'-'+i]).length+' / '+a.length+' điểm ngữ pháp'}
-const gfold=t=>String(t==null?'':t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
+const GCAT={'语素':'Hình vị','词类':'Từ loại','短语':'Cụm từ','固定格式':'Cách dùng cố định','句子成分':'Thành phần câu','句子的类型':'Loại câu','特殊表达法':'Cách biểu đạt đặc biệt','动作的态':'Thể của động tác','语段（句群）':'Đoạn văn / nhóm câu'};
+const GLN=l=>l==='7-9'?'7–9':l;
+let GPOS=null;function gpos(){if(!GPOS){GPOS={};((window.HSK_GO&&window.HSK_GO.official)||[]).forEach((r,n)=>GPOS[r.id]=n)}return GPOS}
+function grow(id){const O=window.HSK_GO;return O&&O.official[gpos()[id]]}
+/* Mô hình: mỗi bài = {key,kind:'old'|'auto',l20,l30,tags,ids,basis,p,stub,pos}. Cấp 2.0 và 3.0 lưu riêng. */
+function gitems(){const O=window.HSK_GO,P=gpos(),out=[];
+  Object.keys(window.HSK_G).forEach(lv=>window.HSK_G[lv].forEach((p,i)=>{const k=lv+'-'+i,e=O&&O.entries&&O.entries[k]||{hsk20_level:lv,hsk30_level:null,curriculum_tags:['hsk20'],official:[],link_basis:'none'};
+    out.push({key:k,kind:'old',i:+i,l20:e.hsk20_level,l30:e.hsk30_level,tags:e.curriculum_tags,ids:e.official,basis:e.link_basis,dup:e.dup_group,p,pos:e.official.length?Math.min.apply(null,e.official.map(id=>P[id])):1e9})}));
+  (window.HSK_GN||[]).forEach(s=>out.push({key:s.id,kind:'auto',l20:null,l30:s.hsk30_level,tags:['hsk30'],ids:s.official,basis:'auto-vocab',stub:s,pos:P[s.official[0]]}));
+  (window.HSK_GA||[]).forEach(a=>out.push({key:a.id,kind:'auth',l20:null,l30:a.hsk30_level,tags:['hsk30'],ids:a.official,basis:'authored',auth:a,pos:P[a.official[0]]}));
+  return out}
+function gprog(e,pg){const t=e.tags;return pg==='all'||(pg==='20'&&t.indexOf('hsk20')>=0)||(pg==='30'&&t.indexOf('hsk30')>=0)||(pg==='both'&&t.indexOf('hsk20')>=0&&t.indexOf('hsk30')>=0)||(pg==='supp'&&t.indexOf('supplement')>=0)}
+function glvl(e,pg){return pg==='20'||pg==='supp'?e.l20:(e.l30||e.l20)}
+function gview(pg,lvl,all){const r=gitems().filter(e=>gprog(e,pg)&&(all||!lvl||glvl(e,pg)===lvl));
+  const byOff=pg!=='20'&&pg!=='supp';
+  r.sort((a,b)=>byOff?((a.l30||a.l20)===(b.l30||b.l20)?0:(+(a.l30||a.l20)[0]-+(b.l30||b.l20)[0]))||a.pos-b.pos||a.i-b.i:(+a.l20-+b.l20)||a.i-b.i);return r}
+function gunexp(pg,lvl){const O=window.HSK_GO;if(!O||pg==='20'||pg==='supp')return[];const used={};
+  gitems().forEach(e=>e.ids.forEach(id=>used[id]=1));
+  return O.official.filter(r=>(!lvl||r.level===lvl)&&!used[r.id])}
+function ginfo(){if(!window.HSK_G)return;S.g=S.g||{};const pg=$('#gp').value,lvl=$('#gl').value,a=gview(pg,lvl),u=gunexp(pg,lvl);
+  $('#ginfo').textContent='Đã học '+a.filter(e=>S.g[e.key]).length+' / '+a.length+' bài'+(u.length?' · '+u.length+' điểm chính thức chưa có bài':'')}
+const gfold=t=>String(t==null?'':t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/đ/g,'d');
+function gtags(e){const has=x=>e.tags.indexOf(x)>=0;return (has('hsk30')?'<span class="c" title="Thuộc HSK 3.0, cấp '+e.l30+'" style="font-size:.72rem;border:1px solid currentColor;border-radius:4px;padding:0 3px;font-weight:700">HSK 3.0·'+GLN(e.l30)+'</span> ':'')+(has('hsk20')?'<span class="c" title="Thuộc HSK 2.0 cũ, cấp '+e.l20+'" style="font-size:.7rem;border:1px solid currentColor;border-radius:4px;padding:0 3px">HSK 2.0·'+e.l20+'</span> ':'')+(has('supplement')?'<span class="c" title="Kiến thức bổ trợ, không thuộc danh mục chính thức" style="font-size:.7rem">Bổ trợ</span> ':'')+(e.kind==='auto'?'<span class="c" style="font-size:.7rem">Tự động</span> ':'')+(e.kind==='auth'?'<span class="c" style="font-size:.7rem" title="Bài do Hanzi AI biên soạn, không phải nội dung chính thức">Hanzi AI biên soạn</span> ':'')}
+function gref(ids){return ids.slice(0,4).map(id=>{const r=grow(id);return r?'HSK '+GLN(r.level)+' · '+[r.category,r.subcategory,r.detail].filter(Boolean).join(' › ')+' (PDF tr.'+r.source.pdf_page+')':''}).filter(Boolean)}
+function gcard(e){const k=e.key,ex=a=>`<div class="ex"><div class="zh" style="font-size:1.1rem">${esc(a[0])} <button class="btn ghost" data-s="${esc(a[0])}" aria-label="Nghe">🔊</button></div><div class="c" style="text-align:left">${esc(a[1])}</div><div>${esc(a[2])}</div></div>`;
+  const refs=gref(e.ids),bm={'auto-name+level':'ghép tự động theo tên và cấp','content-reviewed':'đã đối chiếu nội dung','auto-exact-word':'trùng từ','auto-vocab':'tự động từ dữ liệu từ vựng','authored':'bài biên soạn theo điểm chính thức'};
+  const link=refs.length?'<p class="c" style="text-align:left;margin:6px 0 0;font-size:.8rem">Điểm chính thức HSK 3.0: '+refs.map(esc).join('; ')+' ('+(bm[e.basis]||e.basis)+')</p>':'';
+  const chk=`<label><input type="checkbox" data-g="${esc(k)}" ${S.g[k]?'checked':''}> Đã học điểm này</label>`;
+  if(e.kind==='auth'){const a=e.auth;return `<details class="gp"><summary>${gtags(e)}<b class="zh">${esc(a.title)}</b>${a.py?' <span class="c">'+esc(a.py)+'</span>':''}</summary><p style="margin:8px 0 4px"><b>Chức năng:</b> ${esc(a.func)}</p><p class="zh" style="margin:0 0 4px"><b>${esc(a.struct)}</b></p><p style="margin:0 0 6px"><b>Nghĩa:</b> ${esc(a.vi)}</p>${a.use?'<p style="margin:0 0 6px"><b>Cách dùng:</b> '+esc(a.use)+'</p>':''}${a.ex.map(ex).join('')}${a.note?'<p style="margin:8px 0 6px"><b>Lưu ý:</b> '+esc(a.note)+'</p>':''}<p class="c" style="text-align:left;margin:8px 0 0;font-size:.8rem">Nội dung do Hanzi AI biên soạn theo điểm ngữ pháp trong đề cương HSK 3.0; ví dụ tự viết, chưa đối chiếu với giáo trình.</p>${link}${chk}</details>`}
+  if(e.kind==='auto'){const s=e.stub;return `<details class="gp"><summary>${gtags(e)}<b class="zh">${esc(s.title)}</b>${s.py?' <span class="c">'+esc(s.py)+'</span>':''}</summary><p style="margin:8px 0 4px"><b>Chức năng:</b> ${esc(s.func)} <span class="c">· thành viên của nhóm từ loại trong danh mục chính thức, không phải điểm ngữ pháp độc lập</span></p><p class="c" style="text-align:left;margin:0 0 4px">${esc(s.formula)}</p><p style="margin:0 0 6px"><b>Nghĩa:</b> ${esc(s.vi)}${s.more&&s.more.length?' <span class="c">(các nghĩa khác trong từ điển: '+esc(s.more.join('; '))+')</span>':''}</p>${s.use?'<p style="margin:0 0 6px"><b>Cách dùng chung của nhóm:</b> '+esc(s.use)+'</p>':''}${s.ex.map(ex).join('')}${s.note?'<p style="margin:8px 0 6px"><b>Lưu ý:</b> '+esc(s.note)+'</p>':''}<p class="c" style="text-align:left;margin:8px 0 0;font-size:.8rem">Tự động từ danh mục HSK 3.0 và dữ liệu từ vựng Hanzi AI. Cách dùng riêng của từ này: cần bổ sung nguồn.</p>${link}${chk}</details>`}
+  const p=e.p,x=p[4]||{};
+  return `<details class="gp"><summary>${gtags(e)}<b class="zh">${esc(p[0])}</b>${x.py?' <span class="c">'+esc(x.py)+'</span>':''}</summary><p class="zh" style="margin:8px 0 4px"><b>${esc(p[1])}</b></p><p style="margin:0 0 6px">${esc(p[2])}</p>${x.use?'<p style="margin:0 0 6px"><b>Cách dùng:</b> '+esc(x.use)+'</p>':''}${(p[3]||[]).map(ex).join('')}${x.note?'<p style="margin:8px 0 6px"><b>Lưu ý / lỗi thường gặp:</b> '+esc(x.note)+'</p>':''}${link}${e.dup?'<p class="c" style="text-align:left;margin:6px 0 0;font-size:.8rem">Có mục liên quan trùng chủ đề (nhóm '+esc(e.dup)+'), giữ riêng để không mất tiến độ.</p>':''}${chk}</details>`}
 function grender(){
   if(!window.HSK_G){$('#glist').innerHTML='<p class="c">Chưa có dữ liệu ngữ pháp. Hãy tải file hsk-grammar.js lên cùng chỗ với index.html.</p>';return}
-  const sel=$('#gl').value,q=gfold(($('#gq')&&$('#gq').value)||'').trim();S.g=S.g||{};ginfo();
-  const lvs=q?['1','2','3','4','5','6']:[sel],out=[];
-  lvs.forEach(lv=>(window.HSK_G[lv]||[]).forEach((p,i)=>{
-    const x=p[4]||{};
-    if(q){const hay=gfold([p[0],p[1],p[2],x.py,x.use,x.note].concat((p[3]||[]).map(e=>e.join(' '))).join(' '));if(hay.indexOf(q)<0)return}
-    out.push(`<details class="gp"><summary>${q?'<span class="c">HSK '+lv+'</span> ':''}<b class="zh">${esc(p[0])}</b>${x.py?' <span class="c">'+esc(x.py)+'</span>':''}</summary><p class="zh" style="margin:8px 0 4px"><b>${esc(p[1])}</b></p><p style="margin:0 0 6px">${esc(p[2])}</p>${x.use?'<p style="margin:0 0 6px"><b>Cách dùng:</b> '+esc(x.use)+'</p>':''}${(p[3]||[]).map(e=>`<div class="ex"><div class="zh" style="font-size:1.1rem">${esc(e[0])} <button class="btn ghost" data-s="${esc(e[0])}" aria-label="Nghe">🔊</button></div><div class="c" style="text-align:left">${esc(e[1])}</div><div>${esc(e[2])}</div></div>`).join('')}${x.note?'<p style="margin:8px 0 6px"><b>Lưu ý / lỗi thường gặp:</b> '+esc(x.note)+'</p>':''}<label><input type="checkbox" data-g="${lv}-${i}" ${S.g[lv+'-'+i]?'checked':''}> Đã học điểm này</label></details>`)}));
-  $('#glist').innerHTML=out.length?(q?'<p class="c" style="text-align:left">Tìm thấy '+out.length+' điểm ngữ pháp (ở mọi cấp).</p>':'')+out.join(''):'<p class="c">Không tìm thấy điểm ngữ pháp phù hợp.</p>';
+  const pg=$('#gp').value,lvl=$('#gl').value,q=gfold(($('#gq')&&$('#gq').value)||'').trim();S.g=S.g||{};ginfo();
+  let list=gview(pg,lvl,!!q);
+  if(q)list=list.filter(e=>{const hay=e.kind==='auth'?[e.auth.title,e.auth.py,e.auth.func,e.auth.struct,e.auth.vi,e.auth.use,e.auth.note].concat(e.auth.ex.map(z=>z.join(' '))):e.kind==='auto'?[e.stub.title,e.stub.py||'',e.stub.func,e.stub.vi,e.stub.formula].concat(e.stub.ex.map(z=>z.join(' '))):((p,x)=>[p[0],p[1],p[2],x.py,x.use,x.note].concat((p[3]||[]).map(z=>z.join(' '))))(e.p,e.p[4]||{});return gfold(hay.join(' ')).indexOf(q)>=0});
+  const out=[];let cur=null;const grp=!q&&pg!=='20'&&pg!=='supp';
+  list.forEach(e=>{if(grp){const r=e.ids.length?grow(e.ids[0]):null,c=r?r.category:'(chưa gắn danh mục chính thức)';if(c!==cur){cur=c;out.push('<h3 class="c" style="text-align:left;margin:12px 0 4px">'+esc(c)+(GCAT[c]?' · '+GCAT[c]:'')+'</h3>')}}
+    out.push(gcard(e))});
+  if(!q){const u=gunexp(pg,lvl);if(u.length)out.push('<details class="gp"><summary><b>Điểm chính thức HSK 3.0 chưa có bài ('+u.length+')</b></summary><div style="font-size:.9rem">'+u.map(r=>'<p style="margin:4px 0"><span class="c">HSK '+GLN(r.level)+' · '+esc([r.category,r.subcategory,r.detail].filter(Boolean).join(' › '))+':</span> <span class="zh">'+esc(r.content||r.detail||'')+'</span> <span class="c">(PDF tr.'+r.source.pdf_page+')</span></p>').join('')+'</div></details>')}
+  $('#glist').innerHTML=out.length?(q?'<p class="c" style="text-align:left">Tìm thấy '+list.length+' điểm ngữ pháp (ở mọi cấp).</p>':'')+out.join(''):'<p class="c">'+(q?'Không tìm thấy điểm ngữ pháp phù hợp.':'Chưa có bài ở mục này.')+'</p>';
 }
-$('#gl').onchange=grender;if($('#gq'))$('#gq').oninput=grender;
+$('#gl').onchange=grender;$('#gp').onchange=grender;if($('#gq'))$('#gq').oninput=grender;
 $('#glist').onclick=e=>{const b=e.target.closest('button');if(b&&b.dataset.s)speak(b.dataset.s)};
 $('#glist').onchange=e=>{const k=e.target.dataset.g;if(k){S.g=S.g||{};if(e.target.checked)S.g[k]=1;else delete S.g[k];save();ginfo()}};
 
