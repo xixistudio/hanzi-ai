@@ -598,7 +598,7 @@ function select(i,fromClick){
     if(window.HanziWriter){
       const cs=getComputedStyle(document.documentElement);
       writer=HanziWriter.create($('#qw'),k.ch,{width:120,height:120,padding:6,strokeColor:cs.getPropertyValue('--ink').trim(),outlineColor:cs.getPropertyValue('--line').trim(),radicalColor:'#c8392b',strokeAnimationSpeed:1.2,delayBetweenStrokes:150,charDataLoader:(c,ok)=>ok(d)});
-      writer.animateCharacter();
+      qloop(writer);
     }else $('#qw').innerHTML='<span class="zh" style="font-size:3rem">'+esc(k.ch)+'</span>';
   }).catch(()=>{
     if(my!==selTok)return;
@@ -607,7 +607,9 @@ function select(i,fromClick){
     $('#qw').innerHTML='<span class="zh" style="font-size:3rem">'+esc(k.ch)+'</span>';
   });
 }
-$('#qkb').onclick=e=>{if(e.target.closest('#qre')&&writer)writer.animateCharacter()};
+let QL=0;
+function qloop(w){const id=++QL;const run=()=>{if(id!==QL||w!==writer||!document.body.contains($('#qw')))return;w.animateCharacter({onComplete:()=>{setTimeout(()=>{if(id===QL)run()},1200)}})};run()}
+$('#qkb').onclick=e=>{if(e.target.closest('#qre')&&writer){writer.cancelQuiz&&0;qloop(writer)}};
 const body=$('#cbody');
 body.addEventListener('click',e=>{const b=e.target.closest('.bx');if(b)select(+b.dataset.i,true)});
 body.addEventListener('mouseover',e=>{const b=e.target.closest('.bx');if(b)select(+b.dataset.i,false)});
