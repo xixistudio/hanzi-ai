@@ -1785,10 +1785,10 @@ function txAll(){/* mọi bài: mới (TR_INDEX) + 26 bài HSK 1 cũ (TR_LEGACY)
  for(const id in L){const m=L[id];out.push({id,legacy:1,src:'ai',t:m.topic_id,b:m.hsk30_level<=2?'b12':'b34',x:m.exercise_type,d:m.direction,lv:m.hsk30_level,title:null})}
  return out}
 function txDone(e){if(e.legacy){const mode=LEG_MODE[e.id.split('-')[1]];const u=units(mode).find(x=>x.id===e.id);return !!(u&&isDone(u))}const a=T.answers[e.id];return !!(a&&a.c)}
-function txPass(e,F){return (!F.b||e.b===F.b)&&(!F.x||e.x===F.x)&&(!F.d||e.d===F.d)&&(!F.s||(F.s==='ai'?e.src==='ai':e.src!=='ai'))}
+function txPass(e,F){return (!F.b||e.b===F.b)&&(!F.x||e.x===F.x)&&(!F.d||e.d===F.d)}
 function txFilters(F){const g=(k,opts)=>'<div class="chips txf" data-k="'+k+'">'+opts.map(([v,n])=>'<button data-v="'+v+'" class="'+(F[k]===v?'cur':'')+'" aria-pressed="'+(F[k]===v)+'">'+n+'</button>').join('')+'</div>';
  const B=((window.TR_TOPICS||{}).levels||{}).bands||[];
- return g('b',[['','Mọi cấp']].concat(B.map(b=>[b.id,b.name])))+g('x',[['','Mọi dạng'],['sentence','Câu'],['paragraph','Đoạn văn'],['dialogue','Hội thoại']])+g('d',[['','Cả hai chiều'],['vi-zh','Việt → Trung'],['zh-vi','Trung → Việt']])+g('s',[['','Mọi nguồn'],['ai','Tự biên (AI soạn)'],['src','Có nguồn (Tatoeba, FLORES-200)']])}
+ return g('b',[['','Mọi cấp']].concat(B.map(b=>[b.id,b.name])))+g('x',[['','Mọi dạng'],['sentence','Câu'],['paragraph','Đoạn văn'],['dialogue','Hội thoại']])+g('d',[['','Cả hai chiều'],['vi-zh','Việt → Trung'],['zh-vi','Trung → Việt']])}
 function txBindF(F,re){root.querySelectorAll('.txf button').forEach(b=>b.onclick=()=>{F[b.parentElement.dataset.k]=b.dataset.v;persist();re()})}
 const TZH={daily:'日常生活',family:'家庭与人际关系',edu:'学习与教育',career:'工作与职业',office:'职场与面试',travel:'旅游与交通',health:'健康',scitech:'科学与技术',society:'社会',nature:'自然与环境',culture:'文化与文学',economy:'经济',web3:'Web3、区块链与加密货币'};
 function thome(){
@@ -1800,11 +1800,8 @@ function thome(){
  const cards=tops.map(tp=>{const es=sel.filter(e=>e.t===tp.id);if(!es.length)return '';const d=es.filter(txDone).length,pc=Math.round(100*d/es.length);
   return '<div class="txc" data-tp="'+tp.id+'" role="button" tabindex="0"><span class="txzhn zh">'+esc(TZH[tp.id]||'')+'</span><b>'+esc(tp.name)+'</b><span>Đã học: <b class="txn">'+d+'/'+es.length+'</b> bài</span><div class="pb" role="progressbar" aria-valuemin="0" aria-valuemax="'+es.length+'" aria-valuenow="'+d+'"><i style="width:'+pc+'%"></i></div><button class="btn'+(d===es.length?' ghost':'')+' txgo" data-tp="'+tp.id+'">'+(d===0?'Bắt đầu học':(d===es.length?'Xem lại':'Tiếp tục học'))+'</button></div>'}).join('');
  h+=cards?'<div class="txg">'+cards+'</div>':'<div class="card"><p class="c">Không có chủ đề nào có bài khớp bộ lọc.</p></div>';
- const us=MODES.map(m=>units(m.k)),tot=us.reduce((s,x)=>s+x.length,0),dd=us.reduce((s,x)=>s+x.filter(isDone).length,0);
- h+='<div class="card"><div class="bar" style="margin:0;justify-content:space-between"><div><b>Bộ 26 bài HSK 1 ban đầu</b><div class="un">Dịch câu, đoạn văn, hội thoại · chấm bằng quy tắc · đã làm '+dd+'/'+tot+'</div></div><button class="btn ghost" id="txold">Mở bộ bài HSK 1</button></div></div>';
  root.innerHTML=h;txBindF(F,thome);
  root.querySelectorAll('.txc').forEach(c=>{const go=()=>topicStart(c.dataset.tp);c.onclick=go;c.onkeydown=ev=>{if(ev.target===c&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();go()}}});
- $('#txold').onclick=()=>{TXback=null;home()};
 }
 function txLoadPacks(files,cb){const need=[...new Set(files)].filter(f=>!txLoaded.has(f));if(!need.length){cb();return}let n=need.length;
  need.forEach(f=>loadScr(f,()=>{txLoaded.add(f);if(--n===0)cb()}))}
