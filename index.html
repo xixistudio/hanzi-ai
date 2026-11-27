@@ -194,7 +194,9 @@ body.wide header,body.wide nav,body.wide main{max-width:1180px}
   <div class="card">
     <h2>Ngữ pháp theo cấp HSK</h2>
     <select id="gl" aria-label="Chọn cấp HSK"><option value="1">HSK 1</option><option value="2">HSK 2</option><option value="3">HSK 3</option><option value="4">HSK 4</option><option value="5" selected>HSK 5</option><option value="6">HSK 6</option></select>
+    <input id="gq" type="search" placeholder="Tìm điểm ngữ pháp (chữ Hán, pinyin hoặc tiếng Việt)" aria-label="Tìm ngữ pháp" style="width:100%;margin:8px 0 0;box-sizing:border-box">
     <p class="c" id="ginfo" style="text-align:left;margin:8px 0 0"></p>
+    <p class="c" style="text-align:left;margin:4px 0 0;font-size:.85rem">Xếp cấp là tổng hợp tham khảo cho HSK 2.0 (kỳ thi không công bố danh sách ngữ pháp chính thức theo cấp). Giải thích và ví dụ do Hanzi AI soạn.</p>
     <div id="glist"></div>
   </div>
 </section>
@@ -278,6 +280,8 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const KEY='hanziai.v1',INT=[0,1,3,7,14,30,60];
 let S={words:[]};
 try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r);if(!Array.isArray(S.words))S={words:[]}}catch(e){}
+/* Chuyển tiến độ ngữ pháp khi mục đổi cấp/vị trí (một lần) */
+try{if(S.gmig!==1&&window.HSK_G_MIG){if(S.g&&typeof S.g==='object'){const ng={};for(const k in S.g){ng[window.HSK_G_MIG[k]||k]=S.g[k]}S.g=ng}S.gmig=1;localStorage.setItem(KEY,JSON.stringify(S))}}catch(e){}
 const today=()=>Math.floor(Date.now()/864e5);
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Không lưu được. Hãy xuất file sao lưu.')}stat()}
@@ -431,12 +435,18 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#modal').hidden
 /* Ngữ pháp */
 function ginfo(){const lv=$('#gl').value,a=(window.HSK_G&&window.HSK_G[lv])||[];S.g=S.g||{};
   $('#ginfo').textContent='Đã học '+a.filter((_,i)=>S.g[lv+'-'+i]).length+' / '+a.length+' điểm ngữ pháp'}
+const gfold=t=>String(t==null?'':t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
 function grender(){
   if(!window.HSK_G){$('#glist').innerHTML='<p class="c">Chưa có dữ liệu ngữ pháp. Hãy tải file hsk-grammar.js lên cùng chỗ với index.html.</p>';return}
-  const lv=$('#gl').value,a=window.HSK_G[lv]||[];S.g=S.g||{};ginfo();
-  $('#glist').innerHTML=a.map((p,i)=>`<details class="gp"><summary><b class="zh">${esc(p[0])}</b></summary><p class="zh" style="margin:8px 0 4px"><b>${esc(p[1])}</b></p><p style="margin:0 0 6px">${esc(p[2])}</p>${p[3].map(e=>`<div class="ex"><div class="zh" style="font-size:1.1rem">${esc(e[0])} <button class="btn ghost" data-s="${esc(e[0])}" aria-label="Nghe">🔊</button></div><div class="c" style="text-align:left">${esc(e[1])}</div><div>${esc(e[2])}</div></div>`).join('')}<label><input type="checkbox" data-g="${lv}-${i}" ${S.g[lv+'-'+i]?'checked':''}> Đã học điểm này</label></details>`).join('');
+  const sel=$('#gl').value,q=gfold(($('#gq')&&$('#gq').value)||'').trim();S.g=S.g||{};ginfo();
+  const lvs=q?['1','2','3','4','5','6']:[sel],out=[];
+  lvs.forEach(lv=>(window.HSK_G[lv]||[]).forEach((p,i)=>{
+    const x=p[4]||{};
+    if(q){const hay=gfold([p[0],p[1],p[2],x.py,x.use,x.note].concat((p[3]||[]).map(e=>e.join(' '))).join(' '));if(hay.indexOf(q)<0)return}
+    out.push(`<details class="gp"><summary>${q?'<span class="c">HSK '+lv+'</span> ':''}<b class="zh">${esc(p[0])}</b>${x.py?' <span class="c">'+esc(x.py)+'</span>':''}</summary><p class="zh" style="margin:8px 0 4px"><b>${esc(p[1])}</b></p><p style="margin:0 0 6px">${esc(p[2])}</p>${x.use?'<p style="margin:0 0 6px"><b>Cách dùng:</b> '+esc(x.use)+'</p>':''}${(p[3]||[]).map(e=>`<div class="ex"><div class="zh" style="font-size:1.1rem">${esc(e[0])} <button class="btn ghost" data-s="${esc(e[0])}" aria-label="Nghe">🔊</button></div><div class="c" style="text-align:left">${esc(e[1])}</div><div>${esc(e[2])}</div></div>`).join('')}${x.note?'<p style="margin:8px 0 6px"><b>Lưu ý / lỗi thường gặp:</b> '+esc(x.note)+'</p>':''}<label><input type="checkbox" data-g="${lv}-${i}" ${S.g[lv+'-'+i]?'checked':''}> Đã học điểm này</label></details>`)}));
+  $('#glist').innerHTML=out.length?(q?'<p class="c" style="text-align:left">Tìm thấy '+out.length+' điểm ngữ pháp (ở mọi cấp).</p>':'')+out.join(''):'<p class="c">Không tìm thấy điểm ngữ pháp phù hợp.</p>';
 }
-$('#gl').onchange=grender;
+$('#gl').onchange=grender;if($('#gq'))$('#gq').oninput=grender;
 $('#glist').onclick=e=>{const b=e.target.closest('button');if(b&&b.dataset.s)speak(b.dataset.s)};
 $('#glist').onchange=e=>{const k=e.target.dataset.g;if(k){S.g=S.g||{};if(e.target.checked)S.g[k]=1;else delete S.g[k];save();ginfo()}};
 
