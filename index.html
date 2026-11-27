@@ -420,6 +420,9 @@ details.sec>summary svg.ic{width:28px;height:28px}
 .ck .dots{gap:4px}.ck .dot{width:22px;height:22px}
 .sb{position:static;max-height:none;overflow:visible}
 .tcd{margin-top:8px;font-size:.9rem;width:100%}.tcd summary{cursor:pointer;color:var(--accent);min-height:32px;padding:4px 0}.tcd ol{margin:4px 0;padding-left:22px;line-height:1.5}.tcd li{margin:3px 0}.hzbig .tcd{max-width:300px;text-align:left}
+.hzbig .an{position:static;margin:2px auto 0;border:1px solid var(--line);background:var(--card);border-radius:99px;padding:6px 14px;font-size:.85rem;cursor:pointer;color:var(--ink);min-height:36px}
+.hzbig .an:hover{border-color:var(--accent);color:var(--accent)}
+.hzbox .rb{width:38px;height:38px;top:8px;right:8px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
@@ -834,7 +837,7 @@ function showHz(ch,from){
   const trV=d.t?'<span class="zh">'+d.t.map(esc).join(' / ')+'</span>':'<span style="font-weight:400;font-size:.95rem">Không ghi nhận dạng khác</span>';
   const trT=d.t?dtag(d.tk==='w'?'unverified':'partially_verified',d.tk==='w'?'Suy ra từ từ ghép':'Lấy từ dữ liệu từ vựng'):'';
   const fr=findRow(ch);
-  let L=`<div class="hzbig"><div class="hzbox"><div id="hzw"><span class="gl zh">${esc(ch)}</span></div><button class="rb" data-say="${esc(ch)}" aria-label="Nghe phát âm chữ ${esc(ch)}">${IC.say}</button><button class="an" id="hzanim" aria-label="Xem thứ tự nét">✍️ Xem nét</button></div>`;
+  let L=`<div class="hzbig"><div class="hzbox"><div id="hzw"><span class="gl zh">${esc(ch)}</span></div><button class="rb" data-say="${esc(ch)}" aria-label="Nghe phát âm chữ ${esc(ch)}">${IC.say}</button></div><button class="an" id="hzanim" aria-label="Xem thứ tự nét">✍️ Xem nét</button>`;
   L+=`<div class="hzpy"><button class="rb" data-say="${esc(ch)}" aria-label="Nghe phát âm">${IC.say}</button><b class="zh">${d.p?d.p.map(esc).join(' / '):'—'}</b>${pyS}</div>`;
   const mT=!mm?'':mm.src==='hsk'?hzd('partially_verified','Nghĩa trong từ điển của Hanzi AI (CC-CEDICT dịch sang tiếng Việt)'):mm.src==='tc'?hzd(TCe&&(TCe.v||HVG[ch])?'unverified':'partially_verified','Thiều Chửu, Hán Việt tự điển (1942), bản số hóa CC0'+(TCe&&TCe.v?'; lấy qua chữ phồn thể '+TCe.v:'')+'. Nghĩa ngắn do hệ thống rút từ các nghĩa đầu'):mm.src==='rad'?hzd('unverified','Tên gọi bộ thủ do Hanzi AI biên soạn, chưa đối chiếu'):hzd('unverified','Chữ này chưa có nghĩa riêng trong dữ liệu; đây là nghĩa của từ chứa nó');
   L+=`<p class="hzmean" title="${esc(vi)}">${viShort?esc(viShort)+(mm.src==='word'?` <small>Thường gặp trong từ <span class="zh">${esc(mm.w)}</span></small>`:''):'<span class="c" style="font-weight:400">Chưa có nghĩa tiếng Việt</span>'}</p>${mT?'<div style="text-align:center">'+mT+'</div>':''}`;
@@ -916,7 +919,7 @@ function showHz(ch,from){
   WR=[];const hw=$('#hzw');
   if(window.HanziWriter&&hw){const cs=getComputedStyle(document.documentElement),ink=cs.getPropertyValue('--ink').trim(),ln=cs.getPropertyValue('--line').trim(),sz=Math.max(150,Math.min(268,hw.clientWidth||240));
     const keep=hw.innerHTML;hw.innerHTML='';
-    const w=HanziWriter.create(hw,ch,{width:sz,height:sz,padding:14,strokeColor:ink,outlineColor:ln,radicalColor:'#7356e8',strokeAnimationSpeed:1.2,delayBetweenStrokes:120,onLoadCharDataError:()=>{hw.innerHTML=keep;if($('#hzs')&&!SN)$('#hzs').textContent='chưa có';const a=$('#hzanim');if(a)a.hidden=true}});
+    const w=HanziWriter.create(hw,ch,{width:sz,height:sz,padding:Math.round(sz*.09),strokeColor:ink,outlineColor:ln,radicalColor:'#7356e8',strokeAnimationSpeed:1.2,delayBetweenStrokes:120,onLoadCharDataError:()=>{hw.innerHTML=keep;if($('#hzs')&&!SN)$('#hzs').textContent='chưa có';const a=$('#hzanim');if(a)a.hidden=true}});
     WR.push(w);$('#hzanim').onclick=()=>w.animateCharacter();
     if(HanziWriter.loadCharacterData)HanziWriter.loadCharacterData(ch).then(cd=>{if($('#hzs')&&!SN)$('#hzs').textContent=cd&&cd.strokes?cd.strokes.length+' nét':'chưa có'}).catch(()=>{if($('#hzs')&&!SN)$('#hzs').textContent='chưa có'})}
   else{if($('#hzs')&&!SN)$('#hzs').textContent='chưa có (cần mạng)';if($('#hzanim'))$('#hzanim').remove()}
