@@ -625,6 +625,27 @@ details.sec>summary svg.ic{width:28px;height:28px}
 #vocab .awsrc.ai,.awsrc.ai{color:#a0640c;border-color:var(--sun-b);background:var(--sun)}
 #vocab .awsel{width:18px;height:18px}
 @media(max-width:640px){#vocab .awg{grid-template-columns:1fr 1fr}}
+/* Nghe chép */
+#dict .lsh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+#dict .lsf{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+#dict .lsf label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:var(--mute);min-width:140px;flex:1}
+#dict .lsf label[hidden]{display:none}
+#dict .lsbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#dict .lsspd{margin:0 0 0 auto}
+#dict .lsspd button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:6px 12px;cursor:pointer}
+#dict .lsspd button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--on)}
+#dict .lsmask{font-size:2rem;line-height:1.6;letter-spacing:.06em;min-height:3.4rem;margin:16px 0 6px;padding:12px 14px;border:1px dashed var(--lav-m);border-radius:14px;background:var(--bg);word-break:break-all}
+#dict .lsmask .ok1{color:var(--okt)}
+#dict .lsmask .no1{color:var(--mute);opacity:.7}
+#dict .lsmask .pu{color:var(--mute)}
+#dict .lsstat{display:flex;align-items:center;gap:12px;font-size:.9rem;color:var(--mute);margin-bottom:10px}
+#dict .lsstat .pbar{flex:1;height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+#dict .lsstat .pbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--lav));transition:width .2s}
+#dict #lsin{width:100%;font-size:1.3rem;min-height:64px}
+#dict #lsdone{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+#dict .lsok{background:var(--okb);color:var(--okt);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+#dict .lsfull{font-size:1.6rem}
+@media(max-width:640px){#dict .lsmask{font-size:1.6rem}#dict .lsspd{margin:4px 0 0}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
@@ -763,14 +784,24 @@ details.sec>summary svg.ic{width:28px;height:28px}
 </section>
 
 <section id="dict" hidden>
-  <div class="card">
-    <h2>Nghe và gõ lại chữ Hán</h2>
-    <p class="c" style="text-align:left">Bấm Nghe, rồi gõ chữ Hán bạn nghe được. Giọng đọc do trình duyệt cung cấp, nên cần máy có giọng tiếng Trung.</p>
-    <div class="bar"><button class="btn" id="dlisten">Nghe</button><button class="btn ghost" id="dhint">Gợi ý nghĩa</button></div>
-    <p id="dh" class="c"></p>
-    <input id="dans" class="zh" placeholder="Gõ chữ Hán…" aria-label="Đáp án">
-    <div class="bar"><button class="btn" id="dcheck">Kiểm tra</button><button class="btn ghost" id="dnext">Từ khác</button></div>
-    <p id="dres"></p>
+  <div class="card lsn">
+    <div class="lsh"><h2 style="margin:0">Nghe chép 听写</h2><span class="c" id="lsprog"></span></div>
+    <div class="lsf">
+      <label>Nguồn<select id="lssrc" aria-label="Nguồn bài nghe"><option value="lib">Câu theo chủ đề</option><option value="nb">Từ trong Sổ từ</option></select></label>
+      <label id="lslvw">Cấp<select id="lslv" aria-label="Cấp HSK"><option value="">Mọi cấp</option><option value="b12">HSK 1–2</option><option value="b34">HSK 3–4</option><option value="b56">HSK 5–6</option><option value="b79">HSK 7–9</option></select></label>
+      <label id="lstpw">Chủ đề<select id="lstp" aria-label="Chủ đề"><option value="">Mọi chủ đề</option></select></label>
+    </div>
+    <div class="lsbar">
+      <button class="btn" id="lsplay" aria-label="Phát">▶ Phát</button>
+      <button class="btn ghost" id="lspause" aria-label="Tạm dừng">⏸ Tạm dừng</button>
+      <button class="btn ghost" id="lsagain" aria-label="Nghe lại">↺ Nghe lại</button>
+      <div class="chips lsspd" role="group" aria-label="Tốc độ"><button data-r="0.75">0.75x</button><button data-r="1" aria-pressed="true">1.0x</button><button data-r="1.25">1.25x</button></div>
+    </div>
+    <div class="lsmask zh" id="lsmask" aria-live="polite" aria-label="Kết quả từng chữ"></div>
+    <div class="lsstat"><span id="lsstat"></span><div class="pbar"><i id="lspb"></i></div></div>
+    <textarea id="lsin" class="zh" rows="2" placeholder="Gõ chữ Hán bạn nghe được…" aria-label="Gõ nội dung nghe được" autocomplete="off" autocorrect="off" spellcheck="false"></textarea>
+    <div class="bar"><button class="btn ghost" id="lsclear">Xóa làm lại</button><button class="btn ghost" id="lsskip">Bỏ qua câu này</button><span class="c" id="lsnote" style="margin-left:auto"></span></div>
+    <div id="lsdone" hidden></div>
   </div>
 </section>
 
@@ -898,7 +929,7 @@ setHero('vocab');
 document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{setHero(b.dataset.t);
   document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
   document.querySelectorAll('main>section').forEach(s=>s.hidden=s.id!==b.dataset.t);
-  if(b.dataset.t==='hz')hzTab();window.scrollTo(0,0);if(b.dataset.t==='review')rstart();if(b.dataset.t==='vocab'&&$('#vmain').hidden){vShow('vmain');vlist()}if(b.dataset.t==='grammar')grender();if(b.dataset.t==='dict'&&!D.cur)dnext();
+  if(b.dataset.t==='hz')hzTab();window.scrollTo(0,0);if(b.dataset.t==='review')rstart();if(b.dataset.t==='vocab'&&$('#vmain').hidden){vShow('vmain');vlist()}if(b.dataset.t==='grammar')grender();if(b.dataset.t==='dict')dictTab();
 });
 
 /* Vocab – Sổ từ của tôi (dữ liệu: S.words trong hanziai.v1; không đổi cấu trúc, chỉ thêm trường tuỳ chọn lapse/rv) */
@@ -966,15 +997,71 @@ function grade(w,ok){
   R.done++;save();rnext();
 }
 
-/* Dictation */
-let D={cur:null};
-function dnext(){const pool=S.words;if(!pool.length){$('#dh').textContent='Hãy thêm từ vựng trước.';D.cur=null;return}
-  D.cur=pool[Math.floor(Math.random()*pool.length)];$('#dans').value='';$('#dres').innerHTML='';$('#dh').textContent='Bấm Nghe để bắt đầu.'}
-$('#dnext').onclick=dnext;
-$('#dlisten').onclick=()=>{if(!D.cur)dnext();if(D.cur)speak(D.cur.h)};
-$('#dhint').onclick=()=>{if(D.cur)$('#dh').textContent='Nghĩa: '+D.cur.m};
-$('#dcheck').onclick=()=>{if(!D.cur)return;const a=$('#dans').value.trim();
-  $('#dres').innerHTML=a===D.cur.h?`<span class="ok">Đúng rồi!</span> <span class="zh">${esc(D.cur.h)}</span> · ${esc(D.cur.p)} · ${esc(D.cur.m)}`:`<span class="no">Chưa đúng.</span> Đáp án: <span class="zh">${esc(D.cur.h)}</span> · ${esc(D.cur.p)} · ${esc(D.cur.m)}`};
+/* Nghe chép (听写): gõ lại câu nghe được, đối chiếu từng chữ theo thời gian thực.
+   - Chữ đúng hiện ngay; chữ sai hoặc chưa gõ hiện "*"; dấu câu luôn hiện, không cần gõ; khoảng trắng và chữ Latin (pinyin đang gõ dở) bị bỏ qua.
+   - Ghép chữ gõ với đáp án bằng thuật toán dãy con chung dài nhất (LCS), nên gõ thiếu, thừa, sửa, xóa chữ đều được xử lý.
+   - Đáp án chỉ được giải mã trong bộ nhớ, không đưa vào HTML trước khi hoàn thành. Tiến độ: localStorage 'hanziai.dict.v1'. */
+const LK='hanziai.dict.v1';
+let LS=(()=>{try{const r=JSON.parse(localStorage.getItem(LK));if(r&&r.done)return r}catch(e){}return {done:{},rate:1,src:'lib',lv:'',tp:'',cur:null}})();
+const lsSave=()=>{try{localStorage.setItem(LK,JSON.stringify(LS))}catch(e){}};
+let D={cur:null};/* giữ tên D/dnext cho bộ chuyển tab */
+const HANC=/\p{Script=Han}/u;
+function lsDec(s){if(!s)return '';try{const k=new TextEncoder().encode(window.LISTEN_KEY||'');const b=Uint8Array.from(atob(s),c=>c.charCodeAt(0));for(let i=0;i<b.length;i++)b[i]^=k[i%k.length]^((i*31)&255);return new TextDecoder().decode(b)}catch(e){return ''}}
+let lsLoaded=false;
+function lsLoad(cb){if(window.LISTEN_ITEMS){lsLoaded=true;return cb()}const s=document.createElement('script');s.src='listen-data.js';s.onload=()=>{lsLoaded=true;cb()};s.onerror=()=>{lsLoaded=true;cb()};document.head.appendChild(s)}
+const lsBand=lv=>lv<=2?'b12':lv<=4?'b34':lv<=6?'b56':'b79';
+function lsPool(){if(LS.src==='nb')return S.words.filter(w=>[...w.h].some(c=>HANC.test(c))).map(w=>({id:'NB-'+w.id,lv:0,t:'',au:null,zh:w.h,py:w.p,vi:w.m,src:'nb'}));
+ return (window.LISTEN_ITEMS||[]).filter(x=>(!LS.lv||lsBand(x.lv)===LS.lv)&&(!LS.tp||x.t===LS.tp))}
+function lsOpen(x){/* giải mã bài hiện tại vào bộ nhớ */
+ const zh=x.zh||lsDec(x.z),py=x.py||lsDec(x.p),vi=x.vi||lsDec(x.v);const chars=[...zh];
+ D.cur={x,zh,py,vi,chars,need:chars.map((c,i)=>HANC.test(c)?i:-1).filter(i=>i>=0),done:false};
+ LS.cur=x.id;lsSave();$('#lsin').value='';$('#lsin').disabled=false;$('#lsdone').hidden=true;$('#lsdone').innerHTML='';lsStop();lsRender();lsProg()}
+function dnext(skip){const pool=lsPool();
+ if(!pool.length){D.cur=null;$('#lsmask').innerHTML='<span class="c">'+(LS.src==='nb'?'Sổ từ chưa có từ nào. Hãy thêm từ trong tab Từ vựng.':'Không có câu nào khớp bộ lọc.')+'</span>';$('#lsstat').textContent='';$('#lspb').style.width='0';lsProg();return}
+ const cur=D.cur&&D.cur.x.id,ix=pool.findIndex(x=>x.id===cur);
+ let nx=null;for(let k=1;k<=pool.length;k++){const c=pool[(Math.max(ix,-1)+k)%pool.length];if(!LS.done[c.id]&&c.id!==cur){nx=c;break}}
+ if(!nx)nx=pool[(ix+1)%pool.length];lsOpen(nx)}
+function lsProg(){const pool=lsPool(),d=pool.filter(x=>LS.done[x.id]).length,i=D.cur?pool.findIndex(x=>x.id===D.cur.x.id):-1;
+ $('#lsprog').textContent=pool.length?(i>=0?'Câu '+(i+1)+'/'+pool.length+' · ':'')+'đã xong '+d:''}
+/* ghép LCS giữa chữ Hán đã gõ và chữ Hán của đáp án → tập vị trí đáp án được gõ đúng */
+function lsMatch(input,cur){const a=cur.need.map(i=>cur.chars[i]),b=[...input].filter(c=>HANC.test(c));const n=a.length,m=b.length;
+ const L=Array.from({length:n+1},()=>new Uint16Array(m+1));
+ for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)L[i][j]=a[i]===b[j]?L[i+1][j+1]+1:Math.max(L[i+1][j],L[i][j+1]);
+ const ok=new Set();let i=0,j=0;while(i<n&&j<m){if(a[i]===b[j]){ok.add(cur.need[i]);i++;j++}else if(L[i+1][j]>=L[i][j+1])i++;else j++}
+ return {ok,typed:m}}
+function lsRender(){const cur=D.cur;if(!cur)return;const {ok,typed}=lsMatch($('#lsin').value,cur);
+ $('#lsmask').innerHTML=cur.chars.map((c,i)=>HANC.test(c)?(ok.has(i)?`<span class="ok1">${esc(c)}</span>`:'<span class="no1">*</span>'):`<span class="pu">${esc(c)}</span>`).join('');
+ const n=cur.need.length,k=ok.size;$('#lsstat').textContent='Đúng '+k+'/'+n+' chữ · '+(n?Math.round(k/n*100):0)+'%'+(typed>k?' · '+(typed-k)+(k===n?' chữ thừa, hãy xóa bớt':' chữ chưa khớp'):'');$('#lspb').style.width=(n?k/n*100:0)+'%';
+ if(n&&k===n&&typed===k&&!cur.done)lsFinish()}
+function lsFinish(){const cur=D.cur;cur.done=true;LS.done[cur.x.id]=1;lsSave();
+ $('#lsdone').hidden=false;$('#lsdone').innerHTML=`<div class="lsok"><b>🎉 Hoàn thành!</b> Bạn đã nghe chép đúng toàn bộ câu.</div><div class="lsfull zh">${esc(cur.zh)}</div><div class="rp">${esc(cur.py||'')}</div><div>${esc(cur.vi||'')}</div>${cur.x.src==='tatoeba'?'<p class="c" style="text-align:left;font-size:.8rem">Câu và bản dịch: Tatoeba (CC BY 2.0 FR).</p>':cur.x.src==='ai'?'<p class="c" style="text-align:left;font-size:.8rem">Câu trong kho Luyện dịch, do AI soạn, chưa được người duyệt.</p>':''}<div class="bar"><button class="btn ghost" id="lsreplay">↺ Nghe lại</button><button class="btn" id="lsnext">Câu tiếp theo →</button></div>`;
+ $('#lsreplay').onclick=()=>lsPlay(true);$('#lsnext').onclick=()=>dnext();lsProg()}
+/* phát âm: file audio nếu có, nếu không dùng giọng đọc tiếng Trung của trình duyệt */
+let lsAudio=null,lsPaused=false;
+function lsStop(){if(lsAudio){lsAudio.pause();lsAudio=null}if('speechSynthesis' in window)speechSynthesis.cancel();lsPaused=false}
+function lsPlay(restart){const cur=D.cur;if(!cur)return;const r=+LS.rate||1;
+ if(cur.x.au){if(!lsAudio||restart){lsStop();lsAudio=new Audio(cur.x.au);lsAudio.onerror=()=>toast('Không tải được file audio.')}lsAudio.playbackRate=r;if(restart)lsAudio.currentTime=0;lsAudio.play().catch(()=>{});lsPaused=false;return}
+ if(!('speechSynthesis' in window)){toast('Trình duyệt không hỗ trợ đọc thành tiếng.');return}
+ if(lsPaused&&!restart&&speechSynthesis.paused){speechSynthesis.resume();lsPaused=false;return}
+ const u=new SpeechSynthesisUtterance(cur.zh);u.lang='zh-CN';u.rate=0.9*r;const v=speechSynthesis.getVoices().find(v=>/^zh(-|_)?(CN|Hans)?/i.test(v.lang));
+ if(v)u.voice=v;else toast('Máy chưa có giọng tiếng Trung. Hãy cài thêm trong cài đặt hệ thống.');
+ speechSynthesis.cancel();lsPaused=false;speechSynthesis.speak(u)}
+function lsPauseF(){if(lsAudio&&!lsAudio.paused){lsAudio.pause();lsPaused=true;return}if('speechSynthesis' in window&&speechSynthesis.speaking){speechSynthesis.pause();lsPaused=true}}
+$('#lsplay').onclick=()=>{if(!D.cur)dnext();lsPlay(false)};
+$('#lspause').onclick=lsPauseF;
+$('#lsagain').onclick=()=>lsPlay(true);
+$('#lsin').addEventListener('input',()=>{if(D.cur&&!D.cur.done)lsRender()});
+$('#lsin').addEventListener('compositionend',()=>{if(D.cur&&!D.cur.done)lsRender()});
+$('#lsclear').onclick=()=>{if(!D.cur)return;if(D.cur.done){lsOpen(D.cur.x);return}$('#lsin').value='';lsRender();$('#lsin').focus()};
+$('#lsskip').onclick=()=>dnext(true);
+document.querySelector('.lsspd').onclick=e=>{const b=e.target.closest('[data-r]');if(!b)return;LS.rate=+b.dataset.r;lsSave();lsSpd();if(lsAudio)lsAudio.playbackRate=LS.rate};
+function lsSpd(){document.querySelectorAll('.lsspd button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.r===+LS.rate))}
+function lsFilters(){$('#lssrc').value=LS.src||'lib';$('#lslv').value=LS.lv||'';$('#lstp').value=LS.tp||'';const lib=LS.src!=='nb';$('#lslvw').hidden=!lib;$('#lstpw').hidden=!lib;lsSpd()}
+['lssrc','lslv','lstp'].forEach(id=>$('#'+id).onchange=()=>{LS.src=$('#lssrc').value;LS.lv=$('#lslv').value;LS.tp=$('#lstp').value;lsSave();lsFilters();D.cur=null;dnext()});
+function dictTab(){lsLoad(()=>{const sel=$('#lstp');if(sel.options.length<2&&window.TR_TOPICS){window.TR_TOPICS.topics.forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=t.name;sel.appendChild(o)})}
+ else if(sel.options.length<2){/* tải danh mục chủ đề */const s=document.createElement('script');s.src='tr-meta.js';s.onload=()=>{if(window.TR_TOPICS&&sel.options.length<2)window.TR_TOPICS.topics.forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=t.name;sel.appendChild(o)});lsFilters()};document.head.appendChild(s)}
+ lsFilters();if(!D.cur){const pool=lsPool(),c=pool.find(x=>x.id===LS.cur&&!LS.done[x.id]);if(c)lsOpen(c);else dnext()}else lsProg()})}
+document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.t!=='dict')lsStop()}));
 
 /* Data */
 $('#exp').onclick=()=>{const b=new Blob([JSON.stringify(Object.assign({},S,{custom:cwLoad()}),null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='hanzi-ai-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href)};
