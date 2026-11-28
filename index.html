@@ -1935,7 +1935,7 @@ function match(it,a){const n=hn(a);if(!n)return{m:'empty'};if(n===hn(it.zh))retu
 let aiTried=false;
 function loadAI(cb){if(window.HSK_AI||aiTried){cb();return}aiTried=true;const s=document.createElement('script');s.src='hsk-ai.js';s.onload=s.onerror=()=>cb();document.head.appendChild(s)}
 let chkTried=false;
-function loadScr(src,cb){const s=document.createElement('script');s.src=src;s.onload=s.onerror=()=>cb();document.head.appendChild(s)}
+function loadScr(src,cb){const s=document.createElement('script');s.src=/^tr-/.test(src)?src+'?v=20261128':src;s.onload=s.onerror=()=>cb();document.head.appendChild(s)}
 function loadChk(cb){if(window.HSK_CHK||chkTried){cb();return}chkTried=true;loadScr('hsk-check-data.js',()=>loadScr('hsk-check.js',cb))}
 let trTried=false;
 function loadTR(cb){if(window.TR_INDEX||trTried){cb();return}trTried=true;loadScr('tr-meta.js',cb)}
