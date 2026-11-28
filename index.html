@@ -1838,7 +1838,8 @@ function check(u){
 /* ---- Luyện dịch theo chủ đề (kho tr-*.js, AI soạn, chưa duyệt). Tiến độ dùng chung T (hanziai.translation.v1): T.answers[id]={a:[...],c}, T.self[id] ---- */
 const TXN={sentence:'Câu',paragraph:'Đoạn văn',dialogue:'Hội thoại'},DIRN={'vi-zh':'Việt → Trung','zh-vi':'Trung → Việt'};
 const LEG_MODE={S:'sentence',PC:'para',DC:'dlg'};
-const trf=f=>{const b=String(f).replace(/^.*\//,'');return /^tr-src-/.test(b)?b:'tr-bank.js'};
+const trf=f=>{const b=String(f).replace(/^.*\//,'');return /^tr-(src-|web3-trading)/.test(b)?b:'tr-bank.js'};
+const lvTag=v=>/^(\d|7-9)/.test(String(v))?'HSK '+v:String(v);
 const SRCN={tatoeba:'Tatoeba',flores200:'FLORES-200'};
 let TXback=null;
 function txF(){return T.top||(T.top={t:null,b:'',x:'',d:''})}
@@ -1905,7 +1906,7 @@ function itemView(e){
  const list=txList(),i=list.findIndex(x=>x.id===e.id),zh2vi=it.direction==='zh-vi',isP=it.exercise_type==='paragraph',segs=it.segments||[];
  const st=T.answers[it.id]||{a:[],c:0},ans=Array.isArray(st.a)?st.a:[],chk=!!st.c,tp=((window.TR_TOPICS||{}).topics||[]).find(x=>x.id===it.topic_id),sub=((tp&&tp.sub)||[]).find(x=>x.id===it.subtopic_id);
  let h=txHead(list,i)+'<div class="card"><div class="stats" style="margin:0 0 6px"><b>Câu '+(i+1)+'/'+list.length+'</b></div>';
- h+='<div class="txtag"><span class="tag">'+TXN[it.exercise_type]+'</span><span class="tag">'+DIRN[it.direction]+'</span><span class="tag">HSK '+esc(it.hsk30_level)+'</span>'+(sub?'<span class="tag">'+esc(sub.name)+'</span>':'')+(it.source&&it.source!=='original'?'<span class="tag txsrc">Nguồn: '+esc(SRCN[it.source]||it.source)+'</span>':'<span class="tag" title="Do AI soạn, chưa được giáo viên hoặc người bản ngữ duyệt">Chưa duyệt</span>')+((it.flags||[]).length?'<span class="tag txchk">⚠ Cần kiểm tra</span>':'')+'</div>';
+ h+='<div class="txtag"><span class="tag">'+TXN[it.exercise_type]+'</span><span class="tag">'+DIRN[it.direction]+'</span><span class="tag">'+esc(lvTag(it.hsk30_level))+'</span>'+(sub?'<span class="tag">'+esc(sub.name)+'</span>':'')+(it.source&&it.source!=='original'?'<span class="tag txsrc">Nguồn: '+esc(SRCN[it.source]||it.source)+'</span>':'<span class="tag" title="Do AI soạn, chưa được giáo viên hoặc người bản ngữ duyệt">Chưa duyệt</span>')+((it.flags||[]).length?'<span class="tag txchk">⚠ Cần kiểm tra</span>':'')+'</div>';
  if(it.title)h+='<h3 class="ph" style="margin-top:10px">'+esc(it.title)+'</h3>';
  if(it.context)h+='<div class="ctx"><b>Bối cảnh:</b> '+esc(it.context)+(it.roles?' <span class="un">('+Object.entries(it.roles).map(([k,v])=>k+': '+esc(v)).join(', ')+')</span>':'')+'</div>';
  h+='<p class="un" style="margin:8px 0">'+(zh2vi?'Đọc tiếng Trung và dịch sang tiếng Việt. Máy không chấm tự động bản dịch tiếng Việt: sau khi bấm Xem đáp án, hãy tự so và tự đánh giá.':'Đọc tiếng Việt và viết bằng tiếng Trung. Máy so với đáp án mẫu và các cách dịch khác trong dữ liệu.')+'</p>';
@@ -1924,6 +1925,8 @@ function itemView(e){
   h+=txSrcBox(it);
   if(v.length)h+='<details open><summary>Từ vựng'+(it.vocab_auto?' (tự động từ kho HSK)':'')+' ('+v.length+')</summary><ul>'+v.map(x=>'<li><span class="zh">'+esc(x.word)+'</span> · '+esc(x.pinyin)+' · '+esc(x.meaning_vi)+(x.hsk30_level?' <span class="un">(HSK '+esc(x.hsk30_level)+')</span>':'')+'</li>').join('')+'</ul></details>';
   if(g.length)h+='<details open><summary>Ngữ pháp'+(it.grammar_by==='ai'?' <span class="tag">AI giải thích</span>':'')+' ('+g.length+')</summary><ul>'+g.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></details>';
+  const tn=it.term_notes||[];if(tn.length)h+='<details open><summary>Thuật ngữ Crypto ('+tn.length+')</summary><ul>'+tn.map(x=>'<li><b class="zh">'+esc(x.term)+'</b>: '+esc(x.explain)+'</li>').join('')+'</ul></details>';
+  if(it.source_note&&(!it.source||it.source==='original'))h+='<p class="un" style="margin:8px 0">Ghi chú biên soạn: '+esc(it.source_note)+'</p>';
   if(cm.length)h+='<details open><summary>Lỗi thường gặp ('+cm.length+')</summary><ul>'+cm.map(x=>'<li>'+(x.wrong?'<span class="zh">'+esc(x.wrong)+'</span><br>':'')+'<small>'+esc(x.why||'')+'</small></li>').join('')+'</ul></details>';
   const s=T.self[it.id];h+='<div class="bar"><span class="c">Bạn tự đánh giá:</span><button class="btn '+(s===1?'':'ghost')+'" data-s="1">Đã đúng ý</button><button class="btn '+(s===0?'':'ghost')+'" data-s="0">Cần ôn lại</button></div>'}
  h+=txNav(i);
