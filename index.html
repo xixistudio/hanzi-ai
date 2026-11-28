@@ -607,6 +607,24 @@ details.sec>summary svg.ic{width:28px;height:28px}
 #trans .txfin{text-align:center;padding:28px 16px}#trans .txfin h3{color:var(--brand);margin:8px 0 4px}
 #trans .txfi{width:56px;height:56px;border-radius:50%;margin:0 auto;display:grid;place-items:center;background:var(--okb);color:var(--okt);font-size:1.6rem;font-weight:700}
 @media(max-width:640px){#trans .txht{display:none}}
+/* Thêm từ vựng */
+#vocab #vsearch .nbh{align-items:center}
+#vocab #vflt{margin:10px 0 0}
+#vocab #awin{width:100%;min-height:96px;font-size:1.1rem}
+#vocab .awc{border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0;background:var(--card)}
+#vocab .awh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#vocab .awz{font-size:1.6rem;font-weight:500}
+#vocab .awinfo{margin-top:8px;display:flex;flex-direction:column;gap:4px}
+#vocab .awg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+#vocab .awf{display:flex;flex-direction:column;gap:4px;margin-top:8px;font-size:.85rem;color:var(--mute)}
+#vocab .awf input,#vocab .awf textarea,#vocab .awf select{font-size:.95rem;color:var(--ink);width:100%}
+#vocab .awf textarea{min-height:44px}
+#vocab .awen{margin-top:8px;font-size:.85rem;background:var(--tile);border-radius:10px;padding:8px 10px}
+#vocab .awen span{color:var(--mute)}
+#vocab .awsrc{display:inline-block;font-size:.68rem;border:1px solid var(--line);border-radius:99px;padding:0 6px;margin-left:4px;color:var(--mute);vertical-align:middle;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#vocab .awsrc.ai,.awsrc.ai{color:#a0640c;border-color:var(--sun-b);background:var(--sun)}
+#vocab .awsel{width:18px;height:18px}
+@media(max-width:640px){#vocab .awg{grid-template-columns:1fr 1fr}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
 </head>
@@ -644,8 +662,9 @@ details.sec>summary svg.ic{width:28px;height:28px}
  <div id="vmain">
   <!-- 1. Tra cứu -->
   <div class="card vsec" id="vsearch">
-    <h2 class="vh2">Tra cứu từ vựng</h2>
+    <div class="nbh"><h2 class="vh2">Tra cứu từ vựng</h2><button class="btn sm" id="vaddbtn">+ Thêm từ vựng</button></div>
     <div class="vq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vq" type="search" class="zh" placeholder="Nhập chữ Hán, pinyin hoặc nghĩa tiếng Việt…" aria-label="Tra cứu từ vựng" autocomplete="off"></div>
+    <div class="chips" id="vflt" role="tablist" aria-label="Lọc kết quả"><button data-vf="all" aria-selected="true">Tất cả từ vựng</button><button data-vf="hsk" aria-selected="false">Từ HSK</button><button data-vf="own" aria-selected="false">Từ tự thêm</button></div>
     <div class="vres" id="vres" hidden><div class="vlist" id="vrl" role="listbox" aria-label="Kết quả tra cứu"></div><div class="vdet" id="vdet" aria-live="polite"></div></div>
   </div>
   <!-- 2. Kho HSK -->
@@ -697,6 +716,20 @@ details.sec>summary svg.ic{width:28px;height:28px}
     <div class="chips" id="lvf"></div>
     <div id="lvlist" class="wl"></div>
     <div class="bar" style="justify-content:center"><button class="btn ghost" id="lvmore" hidden>Xem thêm</button></div>
+  </div>
+ </div>
+ <!-- Màn hình Thêm từ vựng -->
+ <div id="vadd" hidden>
+  <div class="card vsec">
+    <button class="vback" id="awback">← Quay lại Từ vựng</button>
+    <div class="lvh"><h2 class="vh2">Thêm từ vựng</h2></div>
+    <p class="vsub">Nhập chữ Hán giản thể, mỗi dòng một từ (tối đa 30 từ). Hệ thống kiểm tra kho hiện có, tra CC-CEDICT và nhờ AI trên máy (Ollama) soạn nghĩa tiếng Việt, ví dụ cho phần còn thiếu.</p>
+    <textarea id="awin" class="zh" rows="4" placeholder="例如：&#10;杠杆&#10;资金费率&#10;学习" aria-label="Nhập từ vựng"></textarea>
+    <div class="bar"><button class="btn" id="awgo">Kiểm tra từ vựng</button><label class="tb"><input type="checkbox" id="awai" checked> Dùng AI (Ollama) cho phần còn thiếu</label><label class="tb"><input type="checkbox" id="awnb" checked> Thêm luôn vào Sổ từ để học</label></div>
+    <p class="c" id="awst" style="text-align:left;margin:4px 0" aria-live="polite"></p>
+    <div id="awres"></div>
+    <div class="bar" id="awbulk" hidden><button class="btn" id="awsaveall">Thêm các từ đã chọn</button></div>
+    <p class="vsub" style="font-size:.8rem;margin-top:12px">Nguồn: kho HSK của Hanzi AI; CC-CEDICT (© MDBG, CC BY-SA 4.0) cho pinyin và nghĩa tiếng Anh; phần gắn nhãn <span class="awsrc ai">AI</span> do mô hình chạy trên máy bạn soạn, cần tự kiểm tra. Không gửi dữ liệu ra dịch vụ bên ngoài.</p>
   </div>
  </div>
  <!-- Màn hình chủ đề -->
@@ -944,11 +977,12 @@ $('#dcheck').onclick=()=>{if(!D.cur)return;const a=$('#dans').value.trim();
   $('#dres').innerHTML=a===D.cur.h?`<span class="ok">Đúng rồi!</span> <span class="zh">${esc(D.cur.h)}</span> · ${esc(D.cur.p)} · ${esc(D.cur.m)}`:`<span class="no">Chưa đúng.</span> Đáp án: <span class="zh">${esc(D.cur.h)}</span> · ${esc(D.cur.p)} · ${esc(D.cur.m)}`};
 
 /* Data */
-$('#exp').onclick=()=>{const b=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='hanzi-ai-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href)};
+$('#exp').onclick=()=>{const b=new Blob([JSON.stringify(Object.assign({},S,{custom:cwLoad()}),null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='hanzi-ai-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href)};
 $('#imp').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
   r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.words))throw 0;let n=0;
     d.words.forEach(w=>{if(w&&w.h&&w.m&&!S.words.some(x=>x.h===w.h)){S.words.push({id:uid(),h:String(w.h),p:String(w.p||''),m:String(w.m),l:String(w.l||''),box:+w.box||0,due:+w.due||today(),...(w.lapse?{lapse:+w.lapse}:{}),...(w.rv?{rv:1}:{})});n++}});
-    save();vlist();toast('Đã nhập '+n+' từ mới.')}catch(x){toast('File không hợp lệ.')}e.target.value=''};r.readAsText(f)};
+    let nc=0;if(d.custom&&d.custom.words&&typeof d.custom.words==='object'){CW=cwLoad();for(const k in d.custom.words){const c=d.custom.words[k];if(c&&c.h===k&&!CW.words[k]){CW.words[k]=c;nc++}}cwSave()}
+    save();vlist();toast('Đã nhập '+n+' từ mới'+(nc?' và '+nc+' từ tự thêm':'')+'.')}catch(x){toast('File không hợp lệ.')}e.target.value=''};r.readAsText(f)};
 $('#wipe').onclick=()=>{if(confirm('Xóa toàn bộ từ vựng? Hãy xuất file sao lưu trước nếu cần.')){S.words=[];save();vlist()}};
 
 /* Kho HSK + Tra cứu (dữ liệu: window.HSK, HSK_VI, HSK_EX; từ loại từ hsk-detail.js khi cần) */
@@ -968,21 +1002,24 @@ function vIndex(){if(VIX)return VIX;VIX=[];const L=window.HSK||{};
   return VIX}
 function vSearch(q){const qn=NS(q.trim()),qs=qn.replace(/\s+/g,'');if(!qn)return[];
   const idx=vIndex(),seen=new Set(),out=[];
-  const extra=S.words.filter(w=>!idx.some(x=>x.h===w.h)).map(w=>({h:w.h,p:w.p,lv:'',m:w.m,k:NS(w.h+' '+w.p+' '+w.m),pk:NS(w.p).replace(/\s+/g,''),mr:' '+String(w.m).toLowerCase(),own:1}));
+  const ownL=cwNew().map(c=>({h:c.h,p:c.p||'',m:c.vi||''})).concat(S.words.map(w=>({h:w.h,p:w.p,m:w.m})));
+  const extra=ownL.filter((w,i,a)=>!idx.some(x=>x.h===w.h)&&a.findIndex(y=>y.h===w.h)===i).map(w=>({h:w.h,p:w.p,lv:'',m:w.m,k:NS(w.h+' '+w.p+' '+w.m),pk:NS(w.p).replace(/\s+/g,''),mr:' '+String(w.m).toLowerCase(),own:1}));
   const ql=q.trim().toLowerCase(),hasDia=NS(ql)!==ql;  const atW=(t,n)=>{let i=t.indexOf(n);while(i>=0){if(i===0||/[\s,;()\/]/.test(t[i-1]))return true;i=t.indexOf(n,i+1)}return false};
-  for(const x of idx.concat(extra)){if(seen.has(x.h))continue;
+  const pool=VS.f==='hsk'?idx:VS.f==='own'?extra:idx.concat(extra);
+  for(const x of pool){if(seen.has(x.h))continue;
     let sc=-1;if(x.h===q.trim())sc=0;else if(x.h.startsWith(q.trim()))sc=1;else if(x.pk===qs)sc=2;else if(x.pk.startsWith(qs)&&qs.length>1)sc=3;else if(hasDia?atW(x.mr||'',ql):atW(x.k,qn))sc=4+(x.h.includes(q.trim())?0:1);else if(qs.length>1&&x.pk.includes(qs))sc=6;
     if(sc>=0){seen.add(x.h);out.push([sc,x])}}
   return out.sort((a,b)=>a[0]-b[0]||(+(a[1].lv||9))-(+(b[1].lv||9))||a[1].h.length-b[1].h.length).slice(0,40).map(a=>a[1])}
-let VS={sel:null};
-function vrefresh(){const q=$('#vq').value;if(!q.trim()){$('#vres').hidden=true;return}
-  const r=vSearch(q),have=haveSet();$('#vres').hidden=false;
-  if(!r.length){$('#vrl').innerHTML='<p class="c" style="padding:10px">Không tìm thấy từ phù hợp.</p>';$('#vdet').innerHTML='';return}
+let VS={sel:null,f:'all'};
+function ownList(){const L=cwNew().map(c=>({h:c.h,p:c.p||'',lv:'',m:c.vi||'',own:1}));S.words.forEach(w=>{if(!hskRow(w.h)&&!L.some(x=>x.h===w.h))L.push({h:w.h,p:w.p,lv:'',m:w.m,own:1})});return L}
+function vrefresh(){const q=$('#vq').value;if(!q.trim()&&VS.f!=='own'){$('#vres').hidden=true;return}
+  const r=q.trim()?vSearch(q):ownList(),have=haveSet();$('#vres').hidden=false;
+  if(!r.length){$('#vrl').innerHTML='<p class="c" style="padding:10px">'+(q.trim()?'Không tìm thấy từ phù hợp.':'Chưa có từ tự thêm. Bấm "+ Thêm từ vựng" để thêm.')+'</p>';$('#vdet').innerHTML='';return}
   if(!VS.sel||!r.some(x=>x.h===VS.sel))VS.sel=r[0].h;
   $('#vrl').innerHTML=r.map(x=>`<button role="option" class="vri${x.h===VS.sel?' on':''}" aria-selected="${x.h===VS.sel}" data-v="${esc(x.h)}"><b class="zh">${esc(x.h)}</b><span class="p">${esc(x.p)}</span><span class="m">${esc(String(x.m).split(/\s*;\s*/)[0])}</span>${have.has(x.h)?'<i class="dot" title="Đã có trong sổ"></i>':''}</button>`).join('');
   vDetail(VS.sel)}
 function wordLevel(h){const L=window.HSK||{};for(const lv of LVS)if((L[lv]||[]).some(r=>r[0]===h))return lv;return ''}
-function vDetail(h){const x=vIndex().find(z=>z.h===h)||(()=>{const w=S.words.find(z=>z.h===h);return w?{h:w.h,p:w.p,lv:'',m:w.m}:null})();if(!x){$('#vdet').innerHTML='';return}
+function vDetail(h){if(CW.words[h]||(!hskRow(h)&&!vIndex().some(z=>z.h===h))){$('#vdet').innerHTML=cDetailHTML(h);return}const x=vIndex().find(z=>z.h===h)||(()=>{const w=S.words.find(z=>z.h===h);return w?{h:w.h,p:w.p,lv:'',m:w.m}:null})();if(!x){$('#vdet').innerHTML='';return}
   const w=S.words.find(z=>z.h===h),ex=((window.HSK_EX||{})[h]||[]).slice(0,3),D=(window.HSK_D||{})[h];
   const pos=D&&D[0]&&D[0].length?D[0].map(p=>`<span class="tag">${esc(POS[p]||p)}</span>`).join(' '):(window.HSK_D?'<span class="c">Không có dữ liệu</span>':'<span class="c" id="vposl">Đang tải…</span>');
   let o=`<div class="vdh"><div><div class="vdz zh">${esc(x.h)}</div><div class="vdp">${esc(x.p)} <button class="ic" data-s="${esc(x.h)}" aria-label="Nghe ${esc(x.h)}" title="Nghe">🔊</button></div></div><div class="vdtags">${x.lv?'<span class="st st-lv">HSK '+LVN(x.lv)+'</span>':'<span class="st">Từ tự thêm</span>'}${w?nbStatus(w):''}</div></div>`;
@@ -992,10 +1029,13 @@ function vDetail(h){const x=vIndex().find(z=>z.h===h)||(()=>{const w=S.words.fin
   o+=`<div class="bar">${w?'<span class="st st-known" style="padding:8px 12px">✓ Đã có trong Sổ từ</span>':(x.lv?`<button class="btn" data-addv="${esc(x.h)}">+ Thêm vào Sổ từ</button>`:'')}<button class="btn ghost" data-o="${esc(x.h)}">Xem đầy đủ (cách viết, chiết tự)</button></div>`;
   $('#vdet').innerHTML=o;
   if(!window.HSK_D)loadDetail(()=>{if(VS.sel===h&&$('#vpos')){const D2=(window.HSK_D||{})[h];$('#vpos').innerHTML=D2&&D2[0]&&D2[0].length?D2[0].map(p=>`<span class="tag">${esc(POS[p]||p)}</span>`).join(' '):'<span class="c">Không có dữ liệu</span>'}})}
+$('#vflt').onclick=e=>{const b=e.target.closest('[data-vf]');if(!b)return;VS.f=b.dataset.vf;VS.sel=null;$('#vflt').querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b));vrefresh()};
 let vqT;$('#vq').oninput=()=>{clearTimeout(vqT);vqT=setTimeout(()=>{VS.sel=null;vrefresh()},120)};
 $('#vres').onclick=e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.v){VS.sel=b.dataset.v;vrefresh();if(innerWidth<800)$('#vdet').scrollIntoView({block:'start',behavior:'smooth'});return}
   if(b.dataset.s){speak(b.dataset.s);return}if(b.dataset.o){openDetail(b.dataset.o);return}
+  if(b.dataset.editc){awOpen(b.dataset.editc);return}
+  if(b.dataset.addc){const h=b.dataset.addc,hr=hskRow(h),c=curInfo(h);if(hr?hadd(hr.r,hr.lv):addWord(h,c.p||'',c.vi||'','Tự thêm')){save();vlist();vrefresh();toast('Đã thêm vào Sổ từ.')}else toast('Cần có nghĩa tiếng Việt trước khi thêm vào Sổ từ.');return}
   if(b.dataset.addv){const h=b.dataset.addv,lv=wordLevel(h),r=lv&&window.HSK[lv].find(z=>z[0]===h);if(r&&hadd(r,lv)){save();vlist();vrefresh();toast('Đã thêm vào Sổ từ.')}}};
 /* Ô cấp HSK */
 function lvGrid(){if(!window.HSK||!$('#lvgrid'))return;const have=haveSet(),known=new Set(S.words.filter(w=>wst(w)==='known').map(w=>w.h));
@@ -1003,7 +1043,7 @@ function lvGrid(){if(!window.HSK||!$('#lvgrid'))return;const have=haveSet(),know
     return `<button class="lvc" data-lv="${lv}"><span class="lvn">HSK ${LVN(lv)}</span><span class="lvt">${all.length.toLocaleString('vi-VN')} từ</span><span class="pbar"><i style="width:${pc}%"></i></span><span class="lvp">${got?'Đã thêm '+got.toLocaleString('vi-VN')+(kn?' · thuộc '+kn:''):'Chưa thêm từ nào'}</span></button>`}).join('')}
 /* Màn hình cấp HSK */
 let LV={lv:'1',f:'all',n:60,y:0};
-function vShow(view){['vmain','vlevel','vstudy','vtopic'].forEach(id=>$('#'+id).hidden=id!==view)}
+function vShow(view){['vmain','vlevel','vstudy','vtopic','vadd'].forEach(id=>$('#'+id).hidden=id!==view)}
 function lvOpen(lv){LV={lv,f:'all',n:60,y:window.scrollY};$('#lvq').value='';vShow('vlevel');lvRender();window.scrollTo(0,0);try{history.pushState({hz:'lv'},'')}catch(e){}}
 function vBack(){const y=LV.y||0;vShow('vmain');vlist();requestAnimationFrame(()=>window.scrollTo(0,y))}
 function lvRows(){const all=(window.HSK&&window.HSK[LV.lv])||[],have=haveSet(),q=$('#lvq').value.trim(),qn=NS(q),qs=qn.replace(/\s+/g,'');
@@ -1079,6 +1119,181 @@ $('#tpv').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!
  if(d.all){const rows=D.entries;if(!confirm('Thêm '+rows.length+' từ của bộ '+p.name_vi+' vào Sổ từ? Những từ đã có sẽ được bỏ qua.'))return;let n=0;rows.forEach(e=>{if(tpAdd(e,p))n++});save();tpRenderV();toast('Đã thêm '+n+' từ.')}});
 $('#tpv').addEventListener('input',ev=>{if(ev.target.id==='tpq'){TPV.q=ev.target.value;TPV.n=60;tpList()}});
 tpPacks().forEach(p=>{const l=tpLabel(p);if(!$('#ql').querySelector('option[value="'+l+'"]')){const o=document.createElement('option');o.value=l;o.textContent=l;$('#ql').appendChild(o)}});
+
+/* ===== Thêm từ vựng thông minh =====
+   Kho từ tự thêm: localStorage 'hanziai.custom.v1' = {v:1,words:{[chữ Hán]:{h,p,ps[],pos,vi,more,ex[{zh,py,vi}],hsk,topic,note,en,src{},kind:'new'|'supp',added,updated}}}
+   - kind 'new': từ chưa có trong kho HSK; kind 'supp': phần BỔ SUNG cho từ đã có (HSK hoặc Sổ từ), chỉ chứa trường còn thiếu, không sửa dữ liệu gốc.
+   Nguồn: CC-CEDICT (cedict-zh.js, tải khi cần), kho HSK của Hanzi AI, AI chạy trên máy (Ollama) cho phần tiếng Việt/ví dụ. Không dùng dịch vụ trả phí, không có khóa API. */
+const CK='hanziai.custom.v1';
+function cwLoad(){try{const r=JSON.parse(localStorage.getItem(CK));if(r&&r.words&&typeof r.words==='object')return r}catch(e){}return {v:1,words:{}}}
+let CW=cwLoad();
+function cwSave(){localStorage.setItem(CK,JSON.stringify(CW))}
+window.addEventListener('storage',e=>{if(e.key===CK){CW=cwLoad();if(!$('#vres').hidden)vrefresh()}});
+const cwNew=()=>Object.values(CW.words).filter(w=>w.kind==='new');
+/* --- CC-CEDICT --- */
+let CED=null,CEDCH=null;
+function cedLoad(cb){if(CED)return cb(true);const go=()=>{if(!window.CEDICT_RAW)return cb(false);CED=new Map();CEDCH=new Set();
+  for(const line of window.CEDICT_RAW.split('\n')){const a=line.split('\t');const w=a[0];CED.set(w,a.slice(1).map(x=>{const [p,d]=x.split('\x1f');return {p,d}}));if([...w].length===1)CEDCH.add(w)}
+  window.CEDICT_RAW=null;cb(true)};
+ if(window.CEDICT_RAW)return go();const s=document.createElement('script');s.src='cedict-zh.js';s.onload=go;s.onerror=()=>cb(false);document.head.appendChild(s)}
+const isHan=c=>/\p{Script=Han}/u.test(c);
+/* chữ không có trong dữ liệu giản thể (CC-CEDICT giản thể, kho HSK, dữ liệu Chiết tự) → có thể là phồn thể */
+const PYO={'圈':'quān','仓':'cāng','行':'xíng','长':'cháng','重':'zhòng','了':'le','着':'zhe','得':'de','地':'de','还':'hái','都':'dōu','只':'zhǐ','为':'wèi','和':'hé','中':'zhōng','好':'hǎo','要':'yào','当':'dāng','教':'jiāo','一':'yī','不':'bù','单':'dān','空':'kōng','乐':'lè','发':'fā','种':'zhǒng','数':'shù','的':'de','们':'men','么':'me'};
+function chPy(c){if(PYO[c])return PYO[c];const H=HPYM();if(H.has(c))return H.get(c);const r=CED&&CED.get(c);return r?(r.find(x=>x.p===x.p.toLowerCase())||r[0]).p:'?'}
+const toneN=s=>{const T='āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ';for(const ch of s){const k=T.indexOf(ch);if(k>=0)return k%4+1}return 5};
+function nonSimp(w){const hz=(window.HZ&&window.HZ.c)||{};return [...w].filter(c=>isHan(c)&&!CEDCH.has(c)&&!hz[c]&&!(window.HSK_VI||{})[c])}
+/* pinyin tự động cho câu ví dụ: tách từ theo từ điển (ưu tiên kho HSK) */
+const HPYM=()=>{if(HPYM.m)return HPYM.m;const m=new Map();const L=window.HSK||{};for(const lv of LVS)for(const r of (L[lv]||[]))if(!m.has(r[0]))m.set(r[0],String(r[1]).split('/')[0]);return HPYM.m=m};
+function autoPy(zh,ov){const cs=[...zh],out=[];let i=0;const H=HPYM();ov=ov||{};
+ while(i<cs.length){if(!isHan(cs[i])){let t=cs[i];const P={'，':',','。':'.','？':'?','！':'!','：':':','；':';','、':',','“':'"','”':'"'};out.push({p:1,t:P[t]!==undefined?P[t]:t});i++;continue}
+  let best=null;for(let l=Math.min(6,cs.length-i);l>=1;l--){const w=cs.slice(i,i+l).join('');if(ov[w]){best=[w,ov[w]];break}if(l>1&&/^(都会|的话|上了|会在|人家)$/.test(w))continue;if(H.has(w)){best=[w,H.get(w)];break}if(CED&&CED.has(w)){const r=CED.get(w),lo=r.find(x=>x.p===x.p.toLowerCase())||r[0];best=[w,lo.p];break}}
+  if(!best||[...best[0]].length===1)best=[cs[i],chPy(cs[i])];out.push({w:best[0],p:best[1]});i+=[...best[0]].length}
+ out.forEach((t,k)=>{if(t.p!==1&&t.w.length>1&&/^[一不]/.test(t.w)){const sy=String(t.p).split(/\s+/);if(sy.length>1){const nt=toneN(sy[1]);sy[0]=t.w[0]==='不'?(nt===4?'bú':'bù'):(/^一[月日号]/.test(t.w)?sy[0]:(nt===4||nt===5?'yí':'yì'));t.p=sy.join(' ')}else{const m=String(t.p).match(/^(yī|bù)(.+)$/);if(m){const nt=toneN(m[2]);t.p=(m[1]==='bù'?(nt===4?'bú':'bù'):(nt===4||nt===5?'yí':'yì'))+m[2]}}}});
+ out.forEach((t,k)=>{if(t.p===1||!(t.w==='一'||t.w==='不'))return;const nx=out[k+1];if(!nx||nx.p===1)return;const nt=toneN(String(nx.p).split(/\s+/)[0]);if(t.w==='不')t.p=nt===4?'bú':'bù';else t.p=nt===4||nt===5?'yí':'yì'});
+ let s='';out.forEach(t=>{if(t.p===1){s+=t.t;if(/[,.?!:;]/.test(t.t))s+=' ';return}if(s&&!/[\s"]$/.test(s))s+=' ';s+=String(t.p).replace(/\s+/g,'')});
+ s=s.replace(/\s+([,.?!:;])/g,'$1').replace(/\s+/g,' ').trim();return s.charAt(0).toUpperCase()+s.slice(1)}
+/* --- thông tin hiện có trong kho --- */
+function tpEntry(h){for(const p of (window.TOPIC_PACKS||[])){const D=(window.TOPIC_DATA||{})[p.id];const e=D&&D.entries.find(x=>x.word===h);if(e)return {p,e}}return null}
+function hskRow(h){const L=window.HSK||{};for(const lv of LVS){const r=(L[lv]||[]).find(x=>x[0]===h);if(r)return {lv,r}}return null}
+const NEED=['p','pos','vi','ex'];
+const NEEDN={p:'pinyin',pos:'từ loại',vi:'nghĩa tiếng Việt',ex:'câu ví dụ'};
+function curInfo(h){/* gộp: HSK + Sổ từ + phần đã tự thêm/bổ sung */
+ const o={h,src:{}},hr=hskRow(h),c=CW.words[h],w=S.words.find(x=>x.h===h);
+ if(hr){o.hsk='HSK '+LVN(hr.lv);o.p=String(hr.r[1]);o.src.p='Kho HSK';const vi=(window.HSK_VI||{})[h];if(vi){o.vi=vi;o.src.vi='Kho HSK'}
+  const ex=((window.HSK_EX||{})[h]||[]).map(e=>({zh:e[0],py:e[1],vi:e[2]}));if(ex.length){o.ex=ex;o.src.ex='Kho HSK'}
+  const D=(window.HSK_D||{})[h];if(D&&D[0]&&D[0].length){o.pos=D[0].map(p=>POS[p]||p).join(', ');o.src.pos='Kho HSK'}}
+ else o.hsk='Ngoài danh sách HSK';
+ const te=tpEntry(h);if(te){const e=te.e,tn='Kho chủ đề '+(te.p.tag||te.p.name_vi);if(!o.p&&e.pinyin){o.p=e.pinyin;o.src.p=tn}if(!o.pos&&e.pos){o.pos=e.pos;o.src.pos=tn}if(!o.vi&&e.meaning_vi){o.vi=e.meaning_vi;o.src.vi=tn}
+  if(!o.ex&&e.example_zh){o.ex=[{zh:e.example_zh,py:autoPy(e.example_zh),vi:e.example_vi||''}];o.src.ex=tn;o.src.expy='Pinyin ví dụ tách tự động theo từ điển'}if(!o.topic){o.topic=te.p.name_vi;o.src.topic=tn}if(!o.note&&e.note){o.note=e.note;o.src.note=tn}if(!o.en&&e.english){o.en=e.english;o.src.en=tn}}
+ const cfirst=c&&c.kind==='new';
+ const nb=()=>{if(w){if(!o.p&&w.p){o.p=w.p;o.src.p='Sổ từ'}if(!o.vi&&w.m){o.vi=w.m;o.src.vi='Sổ từ'}}};
+ if(!cfirst)nb();
+ if(c){for(const k of ['p','ps','pos','vi','more','ex','topic','note','en']){if(c[k]&&(Array.isArray(c[k])?c[k].length:String(c[k]).trim())&&!o[k]){o[k]=c[k];o.src[k]=(c.src&&c.src[k])||'Từ tự thêm'}}if(c.kind==='new')o.hsk=c.hsk||o.hsk}
+ if(cfirst)nb();
+ o.inKho=!!(hr||c||w||te);o.kind=hr?'hsk':(c&&c.kind==='new')?'own':te?'topic':w?'nb':'none';
+ o.missing=NEED.filter(k=>!(o[k]&&(Array.isArray(o[k])?o[k].length:String(o[k]).trim())));
+ return o}
+/* --- AI (Ollama trên máy người học, cấu hình chung với tab Luyện dịch) --- */
+function aiCfg(){let c={};try{c=JSON.parse(localStorage.getItem('hanziai.translation.ai.v1'))||{}}catch(e){}return {url:String(c.url||'http://localhost:11434').replace(/\/+$/,''),model:c.model||'qwen3:4b'}}
+const CRYPTO_RE=/币|链|仓|杠杆|合约|交易所|钱包|挖矿|空投|代币|质押|做多|做空|爆仓|止损|止盈|行情|K线|DeFi|NFT|Web3|token|crypto|blockchain|futures|leverage|wallet|exchange|airdrop|staking|liquidat|margin/i;
+const AISCHEMA={type:'object',properties:{pos:{type:'string'},vi:{type:'string'},more:{type:'string'},example_zh:{type:'string'},example_vi:{type:'string'},topic:{type:'string'},note:{type:'string'}},required:['pos','vi','more','example_zh','example_vi','topic','note']};
+async function aiFill(h,info,ced){const cfg=aiCfg();
+ const cryp=CRYPTO_RE.test(h)||CRYPTO_RE.test(ced.map(x=>x.d).join(' '))||((window.TOPIC_DATA||{}).crypto&&window.TOPIC_DATA.crypto.entries.some(e=>e.word===h));
+ const dict=ced.length?ced.map(x=>x.p+': '+x.d).join(' || '):'(không có trong CC-CEDICT)';
+ const sys='Bạn là biên tập viên từ điển Trung–Việt. Chỉ viết tiếng Việt và tiếng Trung giản thể, không dùng chữ phồn thể. Không bịa nghĩa: dựa vào dữ liệu từ điển được cung cấp. Trả lời bằng JSON đúng schema.';
+ const usr=`Từ: ${h}\nPinyin và nghĩa tiếng Anh theo CC-CEDICT: ${dict}\n${info.vi?'Nghĩa tiếng Việt đã có: '+info.vi+'\n':''}${cryp?'Đây là thuật ngữ crypto/trading: ưu tiên nghĩa chuyên ngành crypto, sàn giao dịch, giao dịch.\n':''}Hãy điền:\n- pos: từ loại bằng tiếng Việt (danh từ, động từ, tính từ, phó từ, lượng từ, thành ngữ…)\n- vi: nghĩa tiếng Việt chính, ngắn gọn\n- more: các nghĩa khác và cách dùng phổ biến (nếu có nhiều cách đọc thì nêu nghĩa theo từng cách đọc)\n- example_zh: một câu ví dụ tiếng Trung giản thể tự nhiên, BẮT BUỘC chứa đúng từ "${h}"\n- example_vi: bản dịch tiếng Việt của câu ví dụ\n- topic: chủ đề liên quan (ví dụ: Crypto & Trading, Kinh doanh, Công nghệ, Đời sống, Văn phòng…)\n- note: ghi chú cách dùng, từ đồng nghĩa hoặc từ dễ nhầm (để trống nếu không cần)`;
+ const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),120000);
+ try{const res=await fetch(cfg.url+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},signal:ctl.signal,body:JSON.stringify({model:cfg.model,messages:[{role:'system',content:sys},{role:'user',content:usr}],stream:false,format:AISCHEMA,think:false,keep_alive:'10m',options:{temperature:0.2,num_predict:600,num_ctx:3072}})});
+  if(!res.ok)return {err:'Ollama trả lỗi HTTP '+res.status+'. Kiểm tra mô hình '+cfg.model+' đã được tải chưa.'};
+  const j=await res.json();let o;try{o=JSON.parse(j.message&&j.message.content||'')}catch(e){return {err:'AI trả về dữ liệu không đọc được.'}}
+  return {ok:1,o,cryp}}
+ catch(e){return {err:e.name==='AbortError'?'AI phản hồi quá lâu (quá 2 phút).':'Không kết nối được Ollama ('+cfg.url+'). Hãy mở Ollama trên máy rồi thử lại. Phần từ điển vẫn dùng được.'}}
+ finally{clearTimeout(t)}}
+/* --- màn hình Thêm từ vựng --- */
+let AW={items:[],y:0,busy:false};
+function awOpen(prefill){AW.y=window.scrollY;vShow('vadd');window.scrollTo(0,0);try{history.pushState({hz:'aw'},'')}catch(e){}
+ if(prefill){$('#awin').value=prefill;awCheck(true)}else if(!AW.items.length)$('#awin').focus();awRender()}
+function awBack(){vShow('vmain');vlist();if(!$('#vres').hidden)vrefresh();requestAnimationFrame(()=>window.scrollTo(0,AW.y||0))}
+async function awCheck(edit){if(AW.busy)return;const raw=$('#awin').value.split(/[\n,，、;；\s]+/).map(s=>s.trim()).filter(Boolean);
+ if(!raw.length){toast('Hãy nhập ít nhất một từ.');return}
+ const uniq=[...new Set(raw)].slice(0,30);AW.busy=true;$('#awgo').disabled=true;$('#awst').textContent='Đang tải từ điển CC-CEDICT…';
+ const ok=await new Promise(r=>cedLoad(r));
+ if(!ok){AW.busy=false;$('#awgo').disabled=false;$('#awst').textContent='Không tải được file cedict-zh.js. Hãy tải file này lên cùng chỗ với index.html.';return}
+ await new Promise(r=>window.HSK_D?r():loadDetail(r));
+ for(const tp of (window.TOPIC_PACKS||[]))await new Promise(r=>tpLoad(tp.id,()=>r()));
+ AW.items=uniq.map(h=>{const it={h,sel:false,edit:!!edit};
+  if(![...h].every(isHan)){it.state='bad';it.msg='Chỉ nhập chữ Hán (không kèm chữ cái, số hoặc ký hiệu).';return it}
+  const ns=nonSimp(h);if(ns.length){it.state='trad';it.msg='Chữ '+ns.join('、')+' không có trong dữ liệu chữ giản thể (có thể là chữ phồn thể). Hãy nhập lại bằng chữ giản thể.';return it}
+  const cur=curInfo(h);it.cur=cur;it.ced=(CED.get(h)||[]);
+  if(cur.inKho&&!cur.missing.length&&!edit){it.state='have';return it}
+  it.state=edit&&cur.inKho?'edit':cur.inKho?'miss':(it.ced.length?'new':'none');
+  /* bản nháp: chỉ điền trường còn thiếu */
+  const d={h,p:cur.p||'',ps:[],pos:cur.pos||'',vi:cur.vi||'',more:cur.more||'',ex:cur.ex&&cur.ex.length?cur.ex.slice(0,1):[],topic:cur.topic||'',note:cur.note||'',en:'',hsk:cur.hsk,src:Object.assign({},cur.src)};
+  if(it.ced.length){d.ps=it.ced.map(x=>x.p);d.en=it.ced.map(x=>(it.ced.length>1?x.p+': ':'')+x.d).join(' || ');d.src.en='CC-CEDICT';
+   if(!d.p){const lo=it.ced.find(x=>x.p===x.p.toLowerCase())||it.ced[0];d.p=lo.p;d.src.p='CC-CEDICT'}}
+  if(!d.p){d.p=[...h].map(chPy).join('');d.src.p='Ghép từ âm từng chữ (CC-CEDICT), cần kiểm tra'}
+  it.d=d;it.sel=it.state!=='none';return it});
+ awRender();
+ const use=$('#awai').checked,todo=AW.items.filter(it=>(it.state==='new'||it.state==='miss'||it.state==='none'||it.state==='edit')&&it.d&&(!it.d.vi||!it.d.pos||!it.d.ex.length||!it.d.topic));
+ if(use&&todo.length){for(let k=0;k<todo.length;k++){const it=todo[k];$('#awst').textContent='AI đang soạn '+(k+1)+'/'+todo.length+': '+it.h+'…';it.ai='run';awRender();
+   const r=await aiFill(it.h,it.d,it.ced);if(r.err){it.ai='err';it.aierr=r.err;awRender();if(/kết nối/.test(r.err)){todo.slice(k+1).forEach(x=>{x.ai='err';x.aierr=r.err});break}continue}
+   const o=r.o,d=it.d,A='AI biên soạn (Ollama '+aiCfg().model+'), cần kiểm tra';
+   if(!d.pos&&o.pos){d.pos=o.pos;d.src.pos=A}if(!d.vi&&o.vi){d.vi=o.vi;d.src.vi=A}if(!d.more&&o.more){d.more=o.more;d.src.more=A}
+   if(!d.ex.length&&o.example_zh){const zh=o.example_zh.trim();d.ex=[{zh,py:autoPy(zh,{[it.h]:d.p}),vi:(o.example_vi||'').trim()}];d.src.ex=A+(zh.includes(it.h)?'':' – câu ví dụ KHÔNG chứa từ này');d.src.expy='Pinyin ví dụ tách tự động theo từ điển, cần kiểm tra'}
+   if(!d.topic&&o.topic){d.topic=o.topic;d.src.topic=A}if(!d.note&&o.note){d.note=o.note;d.src.note=A}
+   if(r.cryp&&!/crypto/i.test(d.topic||'')){d.topic=(d.topic?d.topic+', ':'')+'Crypto & Trading'}
+   it.ai='ok';awRender()}}
+ $('#awst').textContent=AW.items.length+' từ đã kiểm tra.'+(use?'':' (Đang tắt AI: nghĩa tiếng Việt và ví dụ của từ mới cần tự điền.)');AW.busy=false;$('#awgo').disabled=false;awRender()}
+const STN={edit:['Đang sửa / bổ sung','st-learning'],have:['Đã có trong kho','st-known'],miss:['Thiếu thông tin','st-learning'],new:['Từ mới đã tra cứu','st-new'],none:['Không tìm thấy dữ liệu đáng tin cậy','st-hard'],trad:['Cần nhập chữ giản thể','st-hard'],bad:['Không hợp lệ','st-hard'],saved:['Đã lưu','st-known'],skip:['Đã bỏ qua','']};
+const srcTag=s=>s?`<span class="awsrc${/AI/.test(s)?' ai':''}" title="${esc(s)}">${esc(/AI/.test(s)?'AI':s.split(' (')[0].split(',')[0])}</span>`:'';
+function awField(it,k,label,big){const d=it.d,v=k==='ex0zh'?(d.ex[0]||{}).zh:k==='ex0py'?(d.ex[0]||{}).py:k==='ex0vi'?(d.ex[0]||{}).vi:d[k];const sk=k.startsWith('ex0')?(k==='ex0py'?'expy':'ex'):k;
+ const lock=it.cur&&/^(Kho HSK|Kho chủ đề|Sổ từ)/.test(it.cur.src[sk.replace('expy','ex')]||'');
+ return `<label class="awf"><span>${label} ${srcTag(d.src[sk])}</span>${big?`<textarea data-k="${k}" rows="2" ${lock?'disabled':''}>${esc(v||'')}</textarea>`:`<input data-k="${k}" value="${esc(v||'')}" ${lock?'disabled':''}>`}</label>`}
+function awRender(){const el=$('#awres');if(!el)return;
+ el.innerHTML=AW.items.map((it,i)=>{const [sn,sc]=STN[it.state]||['',''];let h=`<div class="awc" data-i="${i}"><div class="awh">`;
+  const canSel=it.d&&['new','miss','none','edit'].includes(it.state)||it.edit&&it.d&&it.state!=='saved';
+  h+=canSel?`<input type="checkbox" class="awsel" ${it.sel?'checked':''} aria-label="Chọn ${esc(it.h)}">`:'';
+  h+=`<b class="zh awz">${esc(it.h)}</b><span class="st ${sc}">${sn}</span>${it.ai==='run'?'<span class="c">AI đang soạn…</span>':''}</div>`;
+  if(it.msg)h+=`<p class="no" style="margin:6px 0">${esc(it.msg)}</p>`;
+  if(it.state==='have'){const c=it.cur;h+=`<div class="awinfo"><div><b>${esc(c.p||'')}</b> · ${esc(c.pos||'')} · <span class="st">${esc(c.hsk)}</span></div><div>${esc(c.vi||'')}</div>${c.ex&&c.ex[0]?`<div class="vex"><div class="zh">${esc(c.ex[0].zh)}</div><div class="p">${esc(c.ex[0].py||'')}</div><div>${esc(c.ex[0].vi||'')}</div></div>`:''}<div class="bar"><button class="btn ghost sm" data-act="edit">Sửa / bổ sung</button></div></div>`}
+  if(it.d&&!['have','saved','skip','trad','bad'].includes(it.state)){const d=it.d;
+   if(it.state==='miss'||it.state==='edit')h+=`<p class="c" style="text-align:left;margin:6px 0">Từ đã có trong kho (${esc(it.cur.kind==='hsk'?'kho HSK':it.cur.kind==='own'?'từ tự thêm':it.cur.kind==='topic'?'kho từ vựng theo chủ đề':'Sổ từ')}). Còn thiếu: <b>${it.cur.missing.map(k=>NEEDN[k]).join(', ')||'—'}</b>. Chỉ bổ sung trường còn thiếu, giữ nguyên dữ liệu cũ.</p>`;
+   if(it.state==='none')h+=`<p class="c" style="text-align:left;margin:6px 0">Không có trong kho HSK và CC-CEDICT. Pinyin ghép theo từng chữ; ${it.ai==='ok'?'nội dung do AI soạn, ':''}cần tự kiểm tra kỹ trước khi lưu.</p>`;
+   if(it.aierr)h+=`<p class="no" style="margin:6px 0">${esc(it.aierr)}</p>`;
+   h+=`<div class="awg">`;
+   h+=d.ps.length>1?`<label class="awf"><span>Pinyin ${srcTag(d.src.p)}</span><select data-k="p">${d.ps.map(p=>`<option ${p===d.p?'selected':''}>${esc(p)}</option>`).join('')}</select></label>`:awField(it,'p','Pinyin');
+   h+=awField(it,'pos','Từ loại')+`<label class="awf"><span>Cấp HSK</span><input value="${esc(d.hsk)}" disabled></label>`+awField(it,'topic','Chủ đề')+`</div>`;
+   h+=awField(it,'vi','Nghĩa tiếng Việt',1)+awField(it,'more','Nghĩa khác, cách dùng',1);
+   if(d.en)h+=`<div class="awen"><span>Nghĩa theo CC-CEDICT (tiếng Anh) ${srcTag('CC-CEDICT')}</span><div>${esc(d.en)}</div></div>`;
+   h+=awField(it,'ex0zh','Câu ví dụ',1)+awField(it,'ex0py','Pinyin câu ví dụ')+awField(it,'ex0vi','Dịch câu ví dụ',1)+awField(it,'note','Ghi chú cách dùng, từ đồng nghĩa, từ dễ nhầm',1);
+   h+=`<div class="bar"><button class="btn sm" data-act="save">${it.state==='miss'?'Bổ sung vào kho':it.state==='edit'?'Lưu thay đổi':'Thêm từ này'}</button><button class="btn ghost sm" data-act="skip">Bỏ qua</button></div>`}
+  return h+'</div>'}).join('');
+ const n=AW.items.filter(it=>it.sel&&it.d&&!['saved','skip','have'].includes(it.state)).length;
+ $('#awbulk').hidden=!AW.items.some(it=>it.d&&['new','miss','none','edit'].includes(it.state));$('#awsaveall').textContent='Thêm '+n+' từ đã chọn';$('#awsaveall').disabled=!n}
+function awSave(it){const d=it.d;if(!d)return false;
+ if(!d.p||/\?/.test(d.p)){toast(it.h+': cần có pinyin trước khi lưu.');return false}
+ if(!d.vi.trim()){toast(it.h+': cần có nghĩa tiếng Việt trước khi lưu.');return false}
+ CW=cwLoad();/* đọc lại để tránh ghi đè khi mở nhiều tab */
+ const now=Date.now(),old=CW.words[it.h],hr=hskRow(it.h),w=S.words.find(x=>x.h===it.h);
+ const isSupp=!!(hr||(w&&!(old&&old.kind==='new')));
+ const rec=old?Object.assign({},old):{h:it.h,kind:isSupp?'supp':'new',added:now,src:{}};
+ rec.src=Object.assign({},rec.src||{});
+ const put=(k,v,sk)=>{if(v==null||(Array.isArray(v)?!v.length:!String(v).trim()))return;
+  if(it.cur&&/^(Kho HSK|Kho chủ đề|Sổ từ)/.test(it.cur.src[sk||k]||''))return;/* không ghi đè dữ liệu gốc (kho HSK, kho chủ đề, Sổ từ) */
+  rec[k]=v;rec.src[sk||k]=d.src[sk||k]||'Người học nhập'};
+ const ex=d.ex.filter(e=>e&&e.zh&&e.zh.trim());
+ put('p',d.p);put('pos',d.pos);put('vi',d.vi.trim());put('more',d.more);put('ex',ex,'ex');put('topic',d.topic);put('note',d.note);put('en',d.en);
+ if(d.ps&&d.ps.length)rec.ps=d.ps;if(!isSupp)rec.hsk=d.hsk||'Ngoài danh sách HSK';
+ rec.updated=now;CW.words[it.h]=rec;cwSave();
+ if($('#awnb').checked&&!S.words.some(x=>x.h===it.h)){if(hr)hadd(hr.r,hr.lv);else addWord(it.h,d.p,d.vi.trim(),'Tự thêm');save()}
+ it.state='saved';it.sel=false;return true}
+$('#awgo').onclick=()=>awCheck(false);
+$('#awin').onkeydown=e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();awCheck(false)}};
+$('#awback').onclick=()=>{if(history.state&&history.state.hz==='aw')history.back();else awBack()};
+$('#vaddbtn').onclick=()=>awOpen();
+$('#awres').addEventListener('input',e=>{const c=e.target.closest('.awc');if(!c)return;const it=AW.items[+c.dataset.i],k=e.target.dataset.k;if(!it||!it.d)return;
+ if(e.target.classList.contains('awsel')){it.sel=e.target.checked;awRender();return}
+ if(!k)return;const v=e.target.value,d=it.d,mark=sk=>{if(d.src[sk]&&/AI|CC-CEDICT|Ghép/.test(d.src[sk]))d.src[sk]='Người học sửa'};
+ if(k.startsWith('ex0')){d.ex[0]=d.ex[0]||{zh:'',py:'',vi:''};const f={ex0zh:'zh',ex0py:'py',ex0vi:'vi'}[k];d.ex[0][f]=v;mark(k==='ex0py'?'expy':'ex')}else{d[k]=v;mark(k)}});
+$('#awres').addEventListener('change',e=>{if(e.target.classList.contains('awsel')){const c=e.target.closest('.awc');AW.items[+c.dataset.i].sel=e.target.checked;awRender()}});
+$('#awres').addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b)return;const it=AW.items[+b.closest('.awc').dataset.i];
+ if(b.dataset.act==='skip'){it.state='skip';it.sel=false;awRender()}
+ if(b.dataset.act==='save'){if(awSave(it)){awRender();toast('Đã lưu "'+it.h+'" vào kho từ vựng.')}}
+ if(b.dataset.act==='edit'){$('#awin').value=it.h;awCheck(true)}});
+$('#awsaveall').onclick=()=>{let n=0;AW.items.filter(it=>it.sel&&it.d&&!['saved','skip','have'].includes(it.state)).forEach(it=>{if(awSave(it))n++});awRender();if(n)toast('Đã lưu '+n+' từ vào kho từ vựng.')};
+window.addEventListener('popstate',()=>{if(!$('#vadd').hidden)awBack()});
+/* chi tiết từ tự thêm / phần bổ sung trong khung Tra cứu */
+function cDetailHTML(h){const c=curInfo(h),w=S.words.find(z=>z.h===h),src=k=>c.src[k]?` <span class="awsrc${/AI/.test(c.src[k])?' ai':''}">${esc(/AI/.test(c.src[k])?'AI':c.src[k].split(' (')[0])}</span>`:'';
+ let o=`<div class="vdh"><div><div class="vdz zh">${esc(h)}</div><div class="vdp">${esc(c.p||'')} <button class="ic" data-s="${esc(h)}" aria-label="Nghe ${esc(h)}" title="Nghe">🔊</button></div></div><div class="vdtags"><span class="st ${c.kind==='hsk'?'st-lv':''}">${esc(c.hsk)}</span>${c.kind==='own'?'<span class="st st-new">Từ tự thêm</span>':''}${w?nbStatus(w):''}</div></div>`;
+ if(c.ps&&c.ps.length>1)o+=`<div class="vdr"><span class="k">Cách đọc</span><span>${c.ps.map(esc).join(' · ')}</span></div>`;
+ o+=`<div class="vdr"><span class="k">Nghĩa${src('vi')}</span><span>${esc(c.vi||'Chưa có')}</span></div><div class="vdr"><span class="k">Từ loại${src('pos')}</span><span>${esc(c.pos||'Chưa có')}</span></div>`;
+ if(c.more)o+=`<div class="vdr"><span class="k">Nghĩa khác${src('more')}</span><span>${esc(c.more)}</span></div>`;
+ if(c.en)o+=`<div class="vdr"><span class="k">CC-CEDICT</span><span class="c" style="text-align:left">${esc(c.en)}</span></div>`;
+ o+=`<div class="vdr col"><span class="k">Ví dụ${src('ex')}</span>${(c.ex||[]).slice(0,3).map(e=>`<div class="vex"><div class="zh">${esc(e.zh)} <button class="ic sm" data-s="${esc(e.zh)}" aria-label="Nghe câu ví dụ" title="Nghe">🔊</button></div><div class="p">${esc(e.py||'')}</div><div>${esc(e.vi||'')}</div></div>`).join('')||'<span class="c">Chưa có câu ví dụ.</span>'}</div>`;
+ if(c.topic)o+=`<div class="vdr"><span class="k">Chủ đề${src('topic')}</span><span>${esc(c.topic)}</span></div>`;
+ if(c.note)o+=`<div class="vdr"><span class="k">Ghi chú${src('note')}</span><span>${esc(c.note)}</span></div>`;
+ o+=`<div class="bar">${w?'<span class="st st-known" style="padding:8px 12px">✓ Đã có trong Sổ từ</span>':`<button class="btn" data-addc="${esc(h)}">+ Thêm vào Sổ từ</button>`}<button class="btn ghost" data-editc="${esc(h)}">Sửa / bổ sung</button>${c.kind==='hsk'?`<button class="btn ghost" data-o="${esc(h)}">Xem đầy đủ</button>`:''}</div>`;
+ return o}
 
 /* Học từ: Flashcard, Trắc nghiệm, Ôn tập thông minh – dùng chung S.words và srsGrade */
 let ST={mode:'',q:[],i:0,ok:0,bad:0,flip:false,ans:null};
